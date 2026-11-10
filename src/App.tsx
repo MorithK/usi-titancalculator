@@ -1,7 +1,10 @@
 
-import { useState, useEffect, type SubmitEvent  } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from './utils/supabase'
+import AppShell from './components/AppShell'
+import PlayerSettings from './components/PlayerSettings'
+import Login from './components/Login'
+import { useEffect, useState } from 'react'
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -81,96 +84,48 @@ export default function App() {
   }, [userId])
 
 
-  async function handleLogin(e: SubmitEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setError('')
+async function handleLogin() {
+  setError('')
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  })
 
-    if (error) setError(error.message)
+  if (error) {
+    setError(error.message)
   }
+}
 
   if (loading) return <p>Loading...</p>
 
-  if (!user) {
-    return (
-      <main>
-        <h1>USI Titan Calculator</h1>
-        <h2>Login</h2>
-
-        <form onSubmit={handleLogin}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-          />
-
-          <button type="submit">Login</button>
-        </form>
-
-        {error && <p role="alert">{error}</p>}
-      </main>
-    )
-  }
-
+if (!user) {
   return (
-
-
-    <main>
-      <h1>USI Titan Calculator</h1>
-      <p>Welcome, {user.email}</p>
-
-      <button onClick={() => void supabase.auth.signOut()}>
-        Log Out
-      </button>
-
-      <h2>Titan Dashboard</h2>
-
-      <div>
-        <label htmlFor="sector">Highest Sector:</label>
-        <input
-          id="sector"
-          type="number"
-          min="150"
-          value={highestSector}
-          onChange={(e) => setHighestSector(Number(e.target.value))}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="region">Region:</label>
-        <select
-          id="region"
-          value={region}
-          onChange={(e) => setRegion(Number(e.target.value))}
-        >
-          <option value="1">Surface</option>
-          <option value="2">Antumbra</option>
-          <option value="3">Penumbra</option>
-          <option value="4">Umbra</option>
-        </select>
-      </div>
-
-      <button onClick={savePlayerData}>
-        Save Player Data
-      </button>
-
-      <p>{saveMessage}</p>
-    </main>
+    <Login
+      email={email}
+      password={password}
+      error={error}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
+      onLogin={handleLogin}
+    />
   )
+}
+
+return (
+<AppShell
+  userEmail={user.email ?? 'Signed in'}
+  onSignOut={() => void supabase.auth.signOut()}
+>
+  <PlayerSettings
+    highestSector={highestSector}
+    region={region}
+    saveMessage={saveMessage}
+    onSectorChange={setHighestSector}
+    onRegionChange={setRegion}
+    onSave={() => void savePlayerData()}
+  />
+</AppShell>)
 }
 
 

@@ -1,58 +1,101 @@
-import { useState } from 'react';
-import { supabase } from '../utils/supabase'
 
-export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+type LoginProps = {
+  email: string
+  password: string
+  error: string
+  onEmailChange: (value: string) => void
+  onPasswordChange: (value: string) => void
+  onLogin: () => Promise<void>
+}
 
-  const handleLogin = async (e: React.SubmitEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrorMsg('');
-
-    const { error } = await supabase.auth.signInWithPassword({
-      username,
-      password,
-    });
-
-    if (error) {
-      setErrorMsg(error.message);
-    }
-    setLoading(false);
-  };
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
-
+export default function Login({
+  email,
+  password,
+  error,
+  onEmailChange,
+  onPasswordChange,
+  onLogin
+}: LoginProps) {
   return (
-    <div style={{ maxWidth: '300px', margin: '2rem auto', fontFamily: 'sans-serif' }}>
-      <h2>Supabase Login</h2>
-      <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <input
-          type="username"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit" disabled={loading}>
-          {loading ? 'Logging in...' : 'Log In'}
-        </button>
-      </form>
-      {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
-      <button onClick={handleSignOut} style={{ marginTop: '1rem' }}>
-        Sign Out
-      </button>
-    </div>
-  );
+    <main className="flex min-h-screen items-center justify-center
+      bg-[#0B1120] p-4">
+
+      <div className="w-full max-w-md rounded-xl border
+        border-slate-800 bg-[#111827] p-8">
+
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold text-cyan-400">
+            USI TITAN
+          </h1>
+          <p className="mt-2 text-sm text-slate-400">
+            Progression Calculator & Planner
+          </p>
+        </div>
+
+        <form
+          onSubmit={e => {
+            e.preventDefault()
+            void onLogin()
+          }}
+          className="space-y-5"
+        >
+          <div>
+            <label
+              htmlFor="email"
+              className="mb-2 block text-sm text-slate-300"
+            >
+              Email
+            </label>
+
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={e => onEmailChange(e.target.value)}
+              className="w-full rounded-lg border border-slate-700
+                bg-slate-900 px-3 py-2 text-white
+                focus:border-cyan-400 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="mb-2 block text-sm text-slate-300"
+            >
+              Password
+            </label>
+
+            <input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={e => onPasswordChange(e.target.value)}
+              className="w-full rounded-lg border border-slate-700
+                bg-slate-900 px-3 py-2 text-white
+                focus:border-cyan-400 focus:outline-none"
+            />
+          </div>
+
+          {error && (
+            <p role="alert" className="text-sm text-red-400">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            className="w-full rounded-lg bg-cyan-500 px-4 py-3
+              font-semibold text-slate-950 hover:bg-cyan-400"
+          >
+            Sign In
+          </button>
+        </form>
+      </div>
+    </main>
+  )
 }

@@ -1,3 +1,8 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+
 :root {
   --text: #6b6375;
   --text-h: #08060d;

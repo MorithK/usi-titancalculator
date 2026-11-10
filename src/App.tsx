@@ -3,7 +3,7 @@ import type { User } from '@supabase/supabase-js'
 import { supabase } from './utils/supabase'
 import AppShell from './components/AppShell'
 import PlayerSettings from './components/PlayerSettings'
-import Login from './components/Login'
+import Login from './components/PlayerLogin'
 import { useEffect, useState } from 'react'
 
 export default function App() {

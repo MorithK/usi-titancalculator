@@ -5,6 +5,7 @@ import AppShell from './components/AppShell'
 import PlayerSettings from './components/PlayerSettings'
 import Login from './components/PlayerLogin'
 import { useEffect, useState } from 'react'
+import ResourcePanel from './components/ResourcePanel'
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -117,15 +118,20 @@ return (
   userEmail={user.email ?? 'Signed in'}
   onSignOut={() => void supabase.auth.signOut()}
 >
-  <PlayerSettings
-    highestSector={highestSector}
-    region={region}
-    saveMessage={saveMessage}
-    onSectorChange={setHighestSector}
-    onRegionChange={setRegion}
-    onSave={() => void savePlayerData()}
-  />
-</AppShell>)
+  <div className="space-y-6">
+    <PlayerSettings
+      highestSector={highestSector}
+      region={region}
+      saveMessage={saveMessage}
+      onSectorChange={setHighestSector}
+      onRegionChange={setRegion}
+      onSave={() => void savePlayerData()}
+    />
+
+    <ResourcePanel userId={user.id} />
+  </div>
+</AppShell>
+)
 }
 
 

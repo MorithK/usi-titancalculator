@@ -18,12 +18,6 @@ type Resource = {
   last_update: string | null
 }
 
-type EditableField = 'resource_amt' | 'resource_gain_rate'
-
-// Accept positive decimal numbers and scientific notation.
-const numericPattern =
-  /^(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i
-
 export default function ResourcePanel({
   userId
 }: {

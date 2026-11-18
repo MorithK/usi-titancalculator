@@ -4,6 +4,7 @@ import { supabase } from '../utils/supabase'
 
 export type Resource = {
   resource_type_id: number
+  resource_type: string
   resource_name: string
   resource_amt: string
   resource_gain_rate: string
@@ -33,17 +34,21 @@ export function usePlayerResources(userId: string, resourceRevision: number) {
       .from('player_resource_overview')
       .select(`
         resource_type_id,
+        resource_type,
         resource_name,
         resource_amt,
         resource_gain_rate,
         last_update,
         gain_active
       `)
-      .eq('resource_type', 'Fragment')
+      .in('resource_type', ['Fragment', 'Specimen'])
+      .neq('resource_type_id', 10)      
       .order('resource_type_id')
       .then(({ data, error }) => {
         if (cancelled) return
-
+        console.log('Resource revision:', resourceRevision)
+        console.log('Resource load error:', error)
+        console.table(data)
         if (error) {
           setLoadError(error.message)
         } else {

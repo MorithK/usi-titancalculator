@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../utils/supabase'
 import { formatScientific, calculateCurrentAmountExact, getEffectiveGainRate } from '../utils/resourceMath'
-import { calculateNextLevelCost } from '../utils/upgradeMath'
+import { calculateNextLevelCost, calculateAffordableLevels, AFFORDABLE_LEVEL_LIMIT,  calculateNextMilestone,  calculateCostToLevel,  calculateRemainingCost } from '../utils/upgradeMath'
 import { type usePlayerResources } from '../hooks/usePlayerResources'
 import { calculateTimeToAfford, formatTimeToAfford } from '../utils/timeToAfford'
 
@@ -14,6 +14,7 @@ type UpgradeDefinition = {
   resource_type_id: number
   sector_unlock: number
   component_type: string
+  milestone_levels: number[]
 }
 
 type ComponentSlot = {
@@ -23,10 +24,15 @@ type ComponentSlot = {
 }
 
 const resourceImages: Record<string, string> = {
-  Capital: 'capital.svg',
-  Veil: 'veil.svg',
-  Antum: 'antum.svg',
-  Penum: 'penum.svg'
+  Capital: 'Frag_Capital.svg',
+  Veil: 'Frag_Veil.svg',
+  Antum: 'Frag_Antum.svg',
+  Penum: 'Frag_Penum.svg',
+  Zephyrion: 'Alien_Zephyrion.svg',
+  Yttaldar: 'Alien_Yttaldar.svg',
+  Xyloquant: 'Alien_Xyloquant.svg',
+  Wraithtex: 'Alien_Wraithtex.svg',
+  Verdanix: 'Alien_Verdanix.svg'
 }
 
 const slotDefinitions = [
@@ -227,18 +233,42 @@ export default function TitanComponentsPanel({
       </p>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-212.5 text-left text-sm">
-          <thead className="border-b border-slate-700
-            text-slate-400">
+        <table className="w-full min-w-300 text-left text-sm">
+          <thead className="border-b border-slate-700 text-slate-400">
+            <tr>
+              <th colSpan={3}></th>
+
+              <th colSpan={3}
+                className="pb-2 text-center text-cyan-400">
+                Next Level
+              </th>
+
+              <th colSpan={4}
+                className="pb-2 text-center text-cyan-400
+                  border-l border-slate-600">
+                Next Milestone
+              </th>
+
+              <th></th>
+            </tr>
+
             <tr>
               <th className="pb-3">Slot</th>
               <th className="pb-3">Component</th>
               <th className="pb-3">Level</th>
-              <th className="pb-3 text-right">Next Cost</th>
+
+              <th className="pb-3 text-right">Cost</th>
+              <th className="pb-3 text-right">Remaining</th>
+              <th className="pb-3 pr-4 text-right">Time to Afford</th>
+
+              <th className="pb-3 text-right border-l border-slate-600">Level</th>
+              <th className="pb-3 text-right">Total Cost</th>
+              <th className="pb-3 text-right">Remaining</th>
               <th className="pb-3 text-right">Time to Afford</th>
+
               <th className="pb-3"></th>
             </tr>
-          </thead>
+          </thead>       
 
           <tbody>
             {slots.map(slot => {
@@ -298,7 +328,20 @@ export default function TitanComponentsPanel({
                       nowMs
                     )
                   : null
-                
+                                 
+                const affordableLevels =
+                  definition &&
+                  !locked &&
+                  validLevel &&
+                  currentAmount !== null
+                    ? calculateAffordableLevels(
+                        String(definition.base_cost),
+                        String(definition.scale),
+                        slot.current_level,
+                        currentAmount
+                        )
+                    : null
+                      
                 const affordability = resource && nextCost !== null
                   ? calculateTimeToAfford(
                       currentAmount,
@@ -306,7 +349,57 @@ export default function TitanComponentsPanel({
                       nextCost
                     )
                   : null
-                  
+                
+                const remainingCost =
+                  nextCost !== null && currentAmount !== null
+                    ? calculateRemainingCost(nextCost, currentAmount)
+                    : null
+
+                const nextMilestone =
+                  definition &&
+                  !locked &&
+                  validLevel &&
+                  Array.isArray(definition.milestone_levels)
+                    ? calculateNextMilestone(
+                        slot.current_level,
+                        definition.milestone_levels
+                      )
+                    : null
+
+                const milestoneMaxed =
+                  definition &&
+                  !locked &&
+                  validLevel &&
+                  Array.isArray(definition.milestone_levels) &&
+                  nextMilestone === null
+
+                const milestoneCost =
+                  definition && nextMilestone !== null
+                    ? calculateCostToLevel(
+                        String(definition.base_cost),
+                        String(definition.scale),
+                        slot.current_level,
+                        nextMilestone
+                      )
+                    : null
+
+                const milestoneRemaining =
+                  milestoneCost !== null && currentAmount !== null
+                    ? calculateRemainingCost(
+                        milestoneCost,
+                        currentAmount
+                      )
+                    : null
+
+                const milestoneAffordability =
+                  resource && milestoneCost !== null
+                    ? calculateTimeToAfford(
+                        currentAmount,
+                        getEffectiveGainRate(resource),
+                        milestoneCost
+                      )
+                    : null
+  
               return (
                 <tr key={slot.slot_number}
                   className="border-b border-slate-800">
@@ -344,20 +437,38 @@ export default function TitanComponentsPanel({
                   </td>
 
                   <td className="py-3 pr-4">
-                    <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={slot.current_level}
-                      disabled={savingSlot !== null || locked}
-                      onChange={e => updateSlot(
-                        slot.slot_number,
-                        { current_level: Number(e.target.value) }
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={slot.current_level}
+                        disabled={savingSlot !== null || locked}
+                        onFocus={e => e.currentTarget.select()}
+                        onChange={e => updateSlot(
+                          slot.slot_number,
+                          { current_level: Number(e.target.value) }
+                        )}
+                        className="w-24 rounded-md border
+                          border-slate-700 bg-slate-900 px-3 py-2
+                          text-white"
+                      />
+
+                      {affordableLevels !== null && (
+                        <span
+                          className={`min-w-10 font-mono text-sm ${
+                            affordableLevels > 0
+                              ? 'text-green-400'
+                              : 'text-slate-500'
+                          }`}
+                          title="Additional levels currently affordable"
+                        >
+                          {affordableLevels >= AFFORDABLE_LEVEL_LIMIT
+                            ? `${AFFORDABLE_LEVEL_LIMIT}+`
+                            : `+${affordableLevels}`}
+                        </span>
                       )}
-                      className="w-24 rounded-md border
-                        border-slate-700 bg-slate-900 px-3 py-2
-                        text-white"
-                    />
+                    </div>
                   </td>
 
                   <td className="py-3 text-right font-mono text-cyan-400">
@@ -388,8 +499,18 @@ export default function TitanComponentsPanel({
                           )
                           : 'Unavailable'}
                   </td>
-
+                  
                   <td className={`py-3 pl-4 text-right font-mono ${
+                    affordability?.status === 'ready'
+                      ? 'text-green-400'
+                      : 'text-slate-300'
+                  }`}>
+                    {remainingCost !== null
+                      ? formatScientific(remainingCost)
+                      : '—'}
+                  </td>
+
+                  <td className={`py-3 pl-4 pr-4 text-right font-mono ${
                     affordability?.status === 'ready'
                       ? 'text-green-400'
                       : 'text-slate-300'
@@ -403,6 +524,39 @@ export default function TitanComponentsPanel({
                           : affordability
                             ? formatTimeToAfford(affordability)
                             : 'Unavailable'}
+                  </td>
+                  
+                  <td className="py-3 pl-4 text-right font-mono text-white
+                  border-l border-slate-600">
+                  {milestoneMaxed
+                    ? 'Maxed'
+                    : nextMilestone ?? '—'}
+                  </td>
+
+                  <td className="py-3 pl-4 text-right font-mono text-cyan-400">
+                    {milestoneCost !== null
+                      ? formatScientific(milestoneCost)
+                      : '—'}
+                  </td>
+
+                  <td className={`py-3 pl-4 text-right font-mono ${
+                    milestoneAffordability?.status === 'ready'
+                      ? 'text-green-400'
+                      : 'text-slate-300'
+                  }`}>
+                    {milestoneRemaining !== null
+                      ? formatScientific(milestoneRemaining)
+                      : '—'}
+                  </td>
+
+                  <td className={`py-3 pl-4 text-right font-mono ${
+                    milestoneAffordability?.status === 'ready'
+                      ? 'text-green-400'
+                      : 'text-slate-300'
+                  }`}>
+                    {milestoneAffordability
+                      ? formatTimeToAfford(milestoneAffordability)
+                      : '—'}
                   </td>
 
                   <td className="py-3 pl-4 text-right">

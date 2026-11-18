@@ -64,6 +64,7 @@ export function calculateTimeToAfford(
   }
 }
 
+
 export function formatTimeToAfford(
   result: Affordability
 ): string {
@@ -75,38 +76,99 @@ export function formatTimeToAfford(
       return 'Invalid value'
 
     case 'ready':
-      return 'Affordable now'
+      return 'Level Available'
 
     case 'unreachable':
       return 'No resource gain'
 
     case 'waiting': {
       const duration = new GameDecimal(result.seconds)
+      const days = duration.div(86400)
 
-      // Avoid converting enormous durations to JS numbers.
-      if (duration.gte(30 * 86400)) {
-        const days = duration
-          .div(86400)
-          .toSignificantDigits(4, Decimal.ROUND_UP)
+      function formatClock(seconds: number): string {
+        const h = Math.floor(seconds / 3600)
+        const m = Math.floor((seconds % 3600) / 60)
+        const s = Math.floor(seconds % 60)
 
-        return `${days.toString()} days`
+        return [h, m, s]
+          .map(value => String(value).padStart(2, '0'))
+          .join(':')
       }
 
-      const total = duration.toNumber()
+      if (days.lte(0)) {
+        return 'Level Available'
+      }
 
-      const days = Math.floor(total / 86400)
-      const hours = Math.floor((total % 86400) / 3600)
-      const minutes = Math.floor((total % 3600) / 60)
-      const seconds = total % 60
+      // Up to 2 days
+      if (days.lte(2)) {
+        return formatClock(duration.toNumber())
+      }
 
-      const parts: string[] = []
+      // Less than 31 days
+      if (days.lt(31)) {
+        const d = days.floor().toNumber()
+        const remainder = duration.mod(86400).toNumber()
 
-      if (days > 0) parts.push(`${days}d`)
-      if (hours > 0) parts.push(`${hours}h`)
-      if (minutes > 0) parts.push(`${minutes}m`)
-      if (seconds > 0) parts.push(`${seconds}s`)
+        return `${d}${d === 1 ? ' Day' : ' Days'}, ${
+          formatClock(remainder)
+        }`
+      }
 
-      return parts.join(' ')
+      // Less than one year
+      if (days.lt(365.25)) {
+        const m = days.div(30.4375).floor().toNumber()
+        const d = days.mod(30.4375).floor().toNumber()
+
+        return `${m}${m === 1 ? ' Month' : ' Months'}${
+          d > 0
+            ? `, ${d}${d === 1 ? ' Day' : ' Days'}`
+            : ''
+        }`
+      }
+
+      // One year or more
+      const y = days.div(365.25).floor()
+
+      return y.gt(999)
+        ? '999+ years'
+        : `${y.toFixed(0)}+ years`
     }
   }
+}
+
+
+export function combineAffordability(
+  results: Affordability[]
+): Affordability {
+  if (
+    results.length === 0 ||
+    results.some(result =>
+      result.status === 'invalid' ||
+      result.status === 'no-target'
+    )
+  ) {
+    return { status: 'invalid' }
+  }
+
+  if (results.some(result => result.status === 'unreachable')) {
+    return { status: 'unreachable' }
+  }
+
+  let longestWait = new GameDecimal(0)
+
+  for (const result of results) {
+    if (result.status === 'waiting') {
+      longestWait = GameDecimal.max(
+        longestWait,
+        result.seconds
+      )
+    }
+  }
+
+  return longestWait.isZero()
+    ? { status: 'ready' }
+    : {
+        status: 'waiting',
+        seconds: longestWait.toString()
+      }
 }

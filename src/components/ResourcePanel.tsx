@@ -5,24 +5,30 @@ import { calculateCurrentAmount, calculateCurrentAmountExact, formatScientific, 
 import { type Resource, type usePlayerResources} from '../hooks/usePlayerResources'
 
 const resourceImages: Record<string, string> = {
-  Capital: 'capital.svg',
-  Veil: 'veil.svg',
-  Antum: 'antum.svg',
-  Penum: 'penum.svg'
+  Capital: 'Frag_Capital.svg',
+  Veil: 'Frag_Veil.svg',
+  Antum: 'Frag_Antum.svg',
+  Penum: 'Frag_Penum.svg',
+  Zephyrion: 'Alien_Zephyrion.svg',
+  Yttaldar: 'Alien_Yttaldar.svg',
+  Xyloquant: 'Alien_Xyloquant.svg',
+  Wraithtex: 'Alien_Wraithtex.svg',
+  Verdanix: 'Alien_Verdanix.svg'
 }
 
-export default function ResourcePanel({
-  userId,
-  resourceState
-}: {
-  userId: string
-  resourceState: ReturnType<typeof usePlayerResources>
-}) {
+  export default function ResourcePanel({
+    userId,
+    resourceState,
+    resourceType = 'Fragment'
+  }: {
+    userId: string
+    resourceState: ReturnType<typeof usePlayerResources>
+    resourceType?: 'Fragment' | 'Specimen'
+  }) {
   const [savingId, setSavingId] = useState<number | null>(null)
   const [message, setMessage] = useState('')
   const [editingAmountId, setEditingAmountId] = useState<number | null>(null)
   const [amountDraft, setAmountDraft] = useState('') 
- 
   const {
     resources,
     setResources,
@@ -30,6 +36,10 @@ export default function ResourcePanel({
     loadError,
     nowMs
   } = resourceState
+
+  const displayedResources = resources.filter(
+    resource => resource.resource_type === resourceType
+  )
   
   async function persistResource(
     resource: Resource,
@@ -179,7 +189,9 @@ export default function ResourcePanel({
     <section className="rounded-xl border border-slate-800
       bg-[#111827] p-6">
       <h3 className="mb-2 text-lg font-semibold text-white">
-        Fragments
+        {resourceType === 'Fragment'
+          ? 'Fragments'
+          : 'Specimens'}
       </h3>
 
       <p className="mb-5 text-sm text-slate-400">
@@ -197,7 +209,7 @@ export default function ResourcePanel({
           </thead>
 
           <tbody>
-            {resources.map(resource => (
+            {displayedResources.map(resource => (
               <tr
                 key={resource.resource_type_id}
                 className="border-b border-slate-800"
@@ -210,7 +222,9 @@ export default function ResourcePanel({
                         src={`${import.meta.env.BASE_URL}images/resources/${resourceImages[resource.resource_name]}`}
                         alt=""
                         aria-hidden="true"
-                        className="h-8 w-8 shrink-0 object-contain"
+                        className={`h-8 w-8 shrink-0 object-contain ${
+                          resourceType === 'Specimen' ? 'brightness-0 invert' : ''
+                        }`}
                       />
                     )}
 
@@ -319,7 +333,7 @@ export default function ResourcePanel({
                         e.currentTarget.blur()
                       }
                     }}
-                    className="w-full rounded-md border border-slate-700
+                    className={`w-full rounded-md border border-slate-700
                       bg-slate-900 px-3 py-2 font-mono
                       focus:border-cyan-400 focus:outline-none
                       disabled:opacity-50
@@ -327,7 +341,7 @@ export default function ResourcePanel({
                         resource.gain_active
                           ? 'text-white'
                           : 'text-slate-500'
-                      }`"
+                      }`}
                       title={
                         resource.gain_active
                           ? 'Resource gain active'

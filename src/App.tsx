@@ -5,7 +5,7 @@ import AppShell from './components/AppShell'
 import PlayerSettings from './components/PlayerSettings'
 import Login from './components/PlayerLogin'
 import { useEffect, useState } from 'react'
-import ResourcePanel from './components/ResourcePanel'
+import CorePanel from './components/CorePanel'
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -16,25 +16,24 @@ export default function App() {
   const [highestSector, setHighestSector] = useState(150)
   const [region, setRegion] = useState(1)
   const [saveMessage, setSaveMessage] = useState('')
+  const [resourceRevision, setResourceRevision] = useState(0)
 
   async function savePlayerData() {
     if (!user) return
 
-    const { error } = await supabase
-      .from('player_saves')
-      .upsert({
-        user_id: user.id,
-        highest_sector: highestSector,
-        region_id: region,
-        last_update: new Date().toISOString()
-      }, {
-        onConflict: 'user_id'
-      })
+    const { error } = await supabase.rpc(
+      'save_player_settings',
+      {
+        p_highest_sector: highestSector,
+        p_region_id: region
+      }
+    )
 
     if (error) {
       setSaveMessage(`Error: ${error.message}`)
     } else {
       setSaveMessage('Player data saved successfully!')
+      setResourceRevision(previous => previous + 1)
     }
     }
 
@@ -85,53 +84,58 @@ export default function App() {
   }, [userId])
 
 
-async function handleLogin() {
-  setError('')
+  async function handleLogin() {
+    setError('')
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  })
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
 
-  if (error) {
-    setError(error.message)
+    if (error) {
+      setError(error.message)
+    }
   }
-}
 
   if (loading) return <p>Loading...</p>
 
-if (!user) {
+  if (!user) {
+    return (
+      <Login
+        email={email}
+        password={password}
+        error={error}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onLogin={handleLogin}
+      />
+    )
+  }
+
   return (
-    <Login
-      email={email}
-      password={password}
-      error={error}
-      onEmailChange={setEmail}
-      onPasswordChange={setPassword}
-      onLogin={handleLogin}
-    />
+  <AppShell
+    userEmail={user.email ?? 'Signed in'}
+    onSignOut={() => void supabase.auth.signOut()}
+  >
+    <div className="space-y-6">
+      <PlayerSettings
+        highestSector={highestSector}
+        region={region}
+        saveMessage={saveMessage}
+        onSectorChange={setHighestSector}
+        onRegionChange={setRegion}
+        onSave={() => void savePlayerData()}
+      />
+
+      <CorePanel
+        key={user.id}
+        userId={user.id}
+        highestSector={highestSector}
+        resourceRevision={resourceRevision}
+      />    
+    </div>
+  </AppShell>
   )
-}
-
-return (
-<AppShell
-  userEmail={user.email ?? 'Signed in'}
-  onSignOut={() => void supabase.auth.signOut()}
->
-  <div className="space-y-6">
-    <PlayerSettings
-      highestSector={highestSector}
-      region={region}
-      saveMessage={saveMessage}
-      onSectorChange={setHighestSector}
-      onRegionChange={setRegion}
-      onSave={() => void savePlayerData()}
-    />
-
-    <ResourcePanel userId={user.id} />
-  </div>
-</AppShell>
-)
 }
 
 

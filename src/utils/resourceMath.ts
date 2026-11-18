@@ -30,6 +30,15 @@ export function calculateCurrentAmountExact(
     .toString()
 }
 
+  export function getEffectiveGainRate(resource: {
+    resource_gain_rate: string
+    gain_active: boolean
+  }): string {
+    return resource.gain_active
+      ? resource.resource_gain_rate
+      : '0'
+  }
+
 // Format the calculated balance for display.
 export function calculateCurrentAmount(
   savedAmount: string,
@@ -52,3 +61,26 @@ export function calculateCurrentAmount(
 
   return value.toExponential(2).replace('e', 'E')
 }
+
+export function formatScientific(
+  value: string,
+  decimalPlaces = 2
+): string {
+  const number = new GameDecimal(value)
+
+  if (number.isZero()) return '0'
+
+  return number.toExponential(decimalPlaces).replace('e', 'E')
+}
+
+export function formatScientificExact(value: string): string {
+  const number = new GameDecimal(value)
+
+  if (number.isZero()) return '0'
+
+  return number.toExponential().replace('e', 'E')
+}
+
+
+
+

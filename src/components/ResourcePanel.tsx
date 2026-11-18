@@ -1,7 +1,8 @@
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { supabase } from '../utils/supabase'
-import { calculateCurrentAmount, calculateCurrentAmountExact } from '../utils/resourceMath'
+import { calculateCurrentAmount, calculateCurrentAmountExact, formatScientific, getEffectiveGainRate} from '../utils/resourceMath'
+import { type Resource, type usePlayerResources} from '../hooks/usePlayerResources'
 
 const resourceImages: Record<string, string> = {
   Capital: 'capital.svg',
@@ -10,71 +11,26 @@ const resourceImages: Record<string, string> = {
   Penum: 'penum.svg'
 }
 
-type Resource = {
-  resource_type_id: number
-  resource_name: string
-  resource_amt: string
-  resource_gain_rate: string
-  last_update: string | null
-}
-
 export default function ResourcePanel({
-  userId
+  userId,
+  resourceState
 }: {
   userId: string
+  resourceState: ReturnType<typeof usePlayerResources>
 }) {
-  const [resources, setResources] = useState<Resource[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<number | null>(null)
   const [message, setMessage] = useState('')
-  const [nowMs, setNowMs] = useState(() => Date.now())
   const [editingAmountId, setEditingAmountId] = useState<number | null>(null)
   const [amountDraft, setAmountDraft] = useState('') 
  
-  useEffect(() => {
-    let cancelled = false
-
-    void supabase
-      .from('player_resource_overview')
-      .select(
-        'resource_type_id, resource_name, resource_amt, resource_gain_rate, last_update'
-      )
-      .eq('resource_type', 'Fragment')
-      .order('resource_type_id')
-      .then(({ data, error }) => {
-        if (cancelled) return
-
-        if (error) {
-          setLoadError(error.message)
-        } else {
-          setResources(
-            (data ?? []).map(row => ({
-              resource_type_id: row.resource_type_id,
-              resource_name: row.resource_name,
-              resource_amt: row.resource_amt ?? '0',
-              resource_gain_rate: row.resource_gain_rate ?? '0',
-              last_update: row.last_update,
-            }))
-          )
-        }
-
-        setLoading(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [userId])
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setNowMs(Date.now())
-    }, 1000)
-
-    return () => window.clearInterval(timer)
-  }, [])
-
+  const {
+    resources,
+    setResources,
+    loading,
+    loadError,
+    nowMs
+  } = resourceState
+  
   async function persistResource(
     resource: Resource,
     newAmount: string,
@@ -157,7 +113,7 @@ export default function ResourcePanel({
     // IMPORTANT: Calculate using the OLD rate.
     const currentAmount = calculateCurrentAmountExact(
       resource.resource_amt,
-      resource.resource_gain_rate,
+      getEffectiveGainRate(resource),
       resource.last_update,
       Date.parse(savedAt)
     )
@@ -179,12 +135,12 @@ export default function ResourcePanel({
   function beginAmountEdit(resource: Resource) {
     const currentAmount = calculateCurrentAmountExact(
       resource.resource_amt,
-      resource.resource_gain_rate,
+      getEffectiveGainRate(resource),
       resource.last_update,
       Date.now()
     )
 
-    setAmountDraft(currentAmount ?? resource.resource_amt)
+    setAmountDraft(formatScientific(currentAmount ?? resource.resource_amt))
     setEditingAmountId(resource.resource_type_id)
     setMessage('')
   }
@@ -267,6 +223,20 @@ export default function ResourcePanel({
                   {editingAmountId === resource.resource_type_id ? (
                     <div className="flex items-center gap-2">
                       <input
+                        autoFocus
+                        onFocus={e => e.currentTarget.select()}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            void commitAmountEdit(resource)
+                          }
+
+                          if (e.key === 'Escape') {
+                            e.preventDefault()
+                            setEditingAmountId(null)
+                            setAmountDraft('')
+                          }
+                        }}                     
                         type="text"
                         aria-label={`${resource.resource_name} amount`}
                         value={amountDraft}
@@ -300,7 +270,7 @@ export default function ResourcePanel({
                       <span className="font-mono text-emerald-400">
                         {calculateCurrentAmount(
                           resource.resource_amt,
-                          resource.resource_gain_rate,
+                          getEffectiveGainRate(resource),
                           resource.last_update,
                           nowMs
                         ) ?? 'Unavailable'}
@@ -321,17 +291,28 @@ export default function ResourcePanel({
 
                 <td className="py-3 pr-3">
                   <input
+                    onFocus={e => e.currentTarget.select()}
                     key={`${resource.resource_type_id}-${resource.last_update ?? 'new'}`}
                     type="text"
                     aria-label={`${resource.resource_name} gain rate`}
-                    defaultValue={resource.resource_gain_rate}
+                    defaultValue={formatScientific(resource.resource_gain_rate)}
                     disabled={
                       savingId !== null ||
                       editingAmountId === resource.resource_type_id
                     }
-                    onBlur={e =>
-                      void commitGainRate(resource, e.currentTarget.value)
-                    }
+                    onBlur={e => {
+                      const input = e.currentTarget
+                      const entered = input.value.trim()
+
+                      // The player hasn't changed the displayed value.
+                      // Preserve the original full-precision rate.
+                      if (entered === formatScientific(resource.resource_gain_rate)) {
+                        return
+                      }
+
+                      // The player entered a new value.
+                      void commitGainRate(resource, entered)
+                    }}
                     onKeyDown={e => {
                       if (e.key === 'Enter') {
                         e.preventDefault()
@@ -339,9 +320,19 @@ export default function ResourcePanel({
                       }
                     }}
                     className="w-full rounded-md border border-slate-700
-                      bg-slate-900 px-3 py-2 font-mono text-white
+                      bg-slate-900 px-3 py-2 font-mono
                       focus:border-cyan-400 focus:outline-none
-                      disabled:opacity-50"
+                      disabled:opacity-50
+                      ${
+                        resource.gain_active
+                          ? 'text-white'
+                          : 'text-slate-500'
+                      }`"
+                      title={
+                        resource.gain_active
+                          ? 'Resource gain active'
+                          : 'Resource gain paused in current region'
+                      }  
                   />
                 </td>
               </tr>

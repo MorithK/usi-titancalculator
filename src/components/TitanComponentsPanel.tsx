@@ -2,9 +2,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../utils/supabase'
 import { formatScientific, calculateCurrentAmountExact, getEffectiveGainRate } from '../utils/resourceMath'
-import { calculateNextLevelCost, calculateAffordableLevels, AFFORDABLE_LEVEL_LIMIT,  calculateNextMilestone,  calculateCostToLevel,  calculateRemainingCost } from '../utils/upgradeMath'
+import { calculateNextLevelCost, calculateAffordableLevels, AFFORDABLE_LEVEL_LIMIT,  calculateNextMilestone,  calculateCostToLevel } from '../utils/upgradeMath'
 import { type usePlayerResources } from '../hooks/usePlayerResources'
 import { calculateTimeToAfford, formatTimeToAfford } from '../utils/timeToAfford'
+import AffordabilityProgress from './AffordabilityProgress'
 
 type UpgradeDefinition = {
   core_upgrade_id: number
@@ -350,11 +351,6 @@ export default function TitanComponentsPanel({
                     )
                   : null
                 
-                const remainingCost =
-                  nextCost !== null && currentAmount !== null
-                    ? calculateRemainingCost(nextCost, currentAmount)
-                    : null
-
                 const nextMilestone =
                   definition &&
                   !locked &&
@@ -383,14 +379,6 @@ export default function TitanComponentsPanel({
                       )
                     : null
 
-                const milestoneRemaining =
-                  milestoneCost !== null && currentAmount !== null
-                    ? calculateRemainingCost(
-                        milestoneCost,
-                        currentAmount
-                      )
-                    : null
-
                 const milestoneAffordability =
                   resource && milestoneCost !== null
                     ? calculateTimeToAfford(
@@ -403,12 +391,14 @@ export default function TitanComponentsPanel({
               return (
                 <tr key={slot.slot_number}
                   className="border-b border-slate-800">
-
+              
+              {/* Slot Name  */}       
                   <td className="py-3 pr-4 text-slate-400">
                     {config.label}
                   </td>
-
-                  <td className="py-3 pr-4">
+              
+              {/* Component Dropdown */}       
+                    <td className="py-3 pr-4">
                     {configurable ? (
                       <select
                         value={slot.core_upgrade_id}
@@ -435,8 +425,9 @@ export default function TitanComponentsPanel({
                       </span>
                     )}
                   </td>
-
-                  <td className="py-3 pr-4">
+              
+              {/* Current Level  */}       
+                    <td className="py-3 pr-4">
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -453,7 +444,8 @@ export default function TitanComponentsPanel({
                           border-slate-700 bg-slate-900 px-3 py-2
                           text-white"
                       />
-
+              
+              {/* Available Levels */}
                       {affordableLevels !== null && (
                         <span
                           className={`min-w-10 font-mono text-sm ${
@@ -471,6 +463,7 @@ export default function TitanComponentsPanel({
                     </div>
                   </td>
 
+                {/* Next Level Cost */}           
                   <td className="py-3 text-right font-mono text-cyan-400">
                     {locked
                       ? `Unlocks at sector ${definition?.sector_unlock}`
@@ -499,18 +492,19 @@ export default function TitanComponentsPanel({
                           )
                           : 'Unavailable'}
                   </td>
-                  
-                  <td className={`py-3 pl-4 text-right font-mono ${
-                    affordability?.status === 'ready'
-                      ? 'text-green-400'
-                      : 'text-slate-300'
-                  }`}>
-                    {remainingCost !== null
-                      ? formatScientific(remainingCost)
-                      : '—'}
-                  </td>
 
-                  <td className={`py-3 pl-4 pr-4 text-right font-mono ${
+                {/* Remaining */}  
+                    <td className="py-3 pl-4 text-right">
+                      <AffordabilityProgress
+                        currentAmount={currentAmount}
+                        targetCost={nextCost}
+                        resourceName={resource?.resource_name}
+                        gainActive={resource?.gain_active}
+                      />
+                    </td>
+                
+                {/* Time to Afford */}      
+                    <td className={`py-3 pl-4 pr-4 text-right font-mono ${
                     affordability?.status === 'ready'
                       ? 'text-green-400'
                       : 'text-slate-300'
@@ -525,30 +519,33 @@ export default function TitanComponentsPanel({
                             ? formatTimeToAfford(affordability)
                             : 'Unavailable'}
                   </td>
-                  
+                
+                {/* MIILESTONE - Next Level  */}      
                   <td className="py-3 pl-4 text-right font-mono text-white
-                  border-l border-slate-600">
-                  {milestoneMaxed
-                    ? 'Maxed'
-                    : nextMilestone ?? '—'}
+                    border-l border-slate-600">
+                    {milestoneMaxed
+                      ? 'Maxed'
+                      : nextMilestone ?? '—'}
                   </td>
-
+                
+                {/* MIILESTONE - Level Cost  */}  
                   <td className="py-3 pl-4 text-right font-mono text-cyan-400">
                     {milestoneCost !== null
                       ? formatScientific(milestoneCost)
                       : '—'}
                   </td>
-
-                  <td className={`py-3 pl-4 text-right font-mono ${
-                    milestoneAffordability?.status === 'ready'
-                      ? 'text-green-400'
-                      : 'text-slate-300'
-                  }`}>
-                    {milestoneRemaining !== null
-                      ? formatScientific(milestoneRemaining)
-                      : '—'}
+                
+                {/* MIILESTONE - Remaining */}  
+                  <td className="py-3 pl-4 text-right">
+                    <AffordabilityProgress
+                      currentAmount={currentAmount}
+                      targetCost={milestoneCost}
+                      resourceName={resource?.resource_name}
+                      gainActive={resource?.gain_active}
+                    />
                   </td>
-
+                
+                {/* MIILESTONE - Time to Afford  */}  
                   <td className={`py-3 pl-4 text-right font-mono ${
                     milestoneAffordability?.status === 'ready'
                       ? 'text-green-400'
@@ -558,7 +555,8 @@ export default function TitanComponentsPanel({
                       ? formatTimeToAfford(milestoneAffordability)
                       : '—'}
                   </td>
-
+                
+                {/* Save Button */}  
                   <td className="py-3 pl-4 text-right">
                     <button
                       type="button"

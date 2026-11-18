@@ -2,6 +2,7 @@
 import { Fragment, useEffect, useState } from 'react'
 import { supabase } from '../utils/supabase'
 import { type usePlayerResources } from '../hooks/usePlayerResources'
+import AffordabilityProgress from './AffordabilityProgress'
 
 import {
   formatScientific,
@@ -12,9 +13,7 @@ import {
 import {
   calculateNextLevelCost,
   calculateAffordableLevels,
-  calculateRemainingCost,
   AFFORDABLE_LEVEL_LIMIT,
-  calculateAffordabilityProgress
 } from '../utils/upgradeMath'
 
 import {
@@ -246,14 +245,6 @@ export default function CrewUpgradesPanel({
                           )
                         : null
 
-                      const remaining =
-                        nextCost !== null && currentAmount !== null
-                          ? calculateRemainingCost(
-                              nextCost,
-                              currentAmount
-                            )
-                          : null
-
                       const affordableLevels =
                         nextCost !== null && currentAmount !== null
                           ? calculateAffordableLevels(
@@ -272,19 +263,14 @@ export default function CrewUpgradesPanel({
                               nextCost
                             )
                           : null
-                        const progress = calculateAffordabilityProgress(
-                            currentAmount,
-                            nextCost
-                          )
 
-                      return {
-                        resourceId,
-                        resource,
-                        remaining,
-                        affordableLevels,
-                        affordability,
-                        progress
-                      }
+                        return {
+                            resourceId,
+                            resource,
+                            currentAmount,
+                            affordableLevels,
+                            affordability
+                        }
                     })
 
                     const affordableLevels =
@@ -312,11 +298,13 @@ export default function CrewUpgradesPanel({
                     return (
                       <Fragment key={id}>
                         <tr className="border-b border-slate-800">
-
+                    
+                    {/* Upgrade Name  */}       
                           <td className="py-3 pr-4 text-white">
                             {definition.crew_upgrade_name}
                           </td>
 
+                    {/* Current Level  */}       
                           <td className="py-3 pr-4">
                             <div className="flex items-center gap-2">
                               <input
@@ -337,7 +325,8 @@ export default function CrewUpgradesPanel({
                                   border-slate-700 bg-slate-900
                                   px-3 py-2 text-white"
                               />
-
+                    
+                    {/* Available Levels */}
                               {affordableLevels !== null && (
                                 <span className={`min-w-10
                                   font-mono text-sm ${
@@ -353,8 +342,8 @@ export default function CrewUpgradesPanel({
                             </div>
                           </td>
 
-                          <td className="py-3 text-right
-                            font-mono text-cyan-400">
+                    {/* Next Level Cost */}
+                          <td className="py-3 text-right font-mono text-cyan-400">
                             {locked
                               ? 'Locked'
                               : nextCost !== null
@@ -372,18 +361,22 @@ export default function CrewUpgradesPanel({
                                 )
                                 : 'Unavailable'}
                           </td>
-
-                          <td className="py-3 pl-4 text-right
-                            font-mono text-slate-300">
+        
+                    {/* Remaining */}      
+                          <td className="py-3 pl-4 text-right">
                             {allSpecimens
-                              ? 'See below'
-                              : requirements[0].remaining !== null
-                                ? formatScientific(
-                                    requirements[0].remaining
-                                  )
-                                : '—'}
+                                ? 'See below'
+                                : (
+                                <AffordabilityProgress
+                                    currentAmount={requirements[0].currentAmount}
+                                    targetCost={nextCost}
+                                    resourceName={requirements[0].resource?.resource_name}
+                                    gainActive={requirements[0].resource?.gain_active}
+                                />
+                                )}
                           </td>
 
+                    {/* Time to Afford */}      
                           <td className={`py-3 pl-4 text-right
                             font-mono ${
                               affordability?.status === 'ready'
@@ -400,7 +393,8 @@ export default function CrewUpgradesPanel({
                                     ? formatTimeToAfford(affordability)
                                     : 'Unavailable'}
                           </td>
-
+                          
+                    {/* Save Button */}      
                           <td className="py-3 pl-4 text-right">
                             <button
                               type="button"
@@ -420,6 +414,8 @@ export default function CrewUpgradesPanel({
                             </button>
                           </td>
                         </tr>
+                       
+                    {/* Corruption Cap specimen list */}      
 
                         {allSpecimens && !locked &&
                           requirements.map(item => (
@@ -440,48 +436,14 @@ export default function CrewUpgradesPanel({
                                   ? formatScientific(nextCost)
                                   : '—'}
                               </td>
-
-                            <td className="py-2 pl-4 text-right font-mono">
-                            <div className="min-w-32 space-y-1">
-
-                                <div className="flex items-center justify-between gap-3">
-                                <span>
-                                    {item.remaining !== null
-                                    ? formatScientific(item.remaining)
-                                    : '—'}
-                                </span>
-
-                                {item.progress !== null && (
-                                    <span className="text-xs text-slate-400">
-                                    {item.progress}%
-                                    </span>
-                                )}
-                                </div>
-
-                                {item.progress !== null && (
-                                <div
-                                    role="progressbar"
-                                    aria-label={`${item.resource?.resource_name} affordability`}
-                                    aria-valuemin={0}
-                                    aria-valuemax={100}
-                                    aria-valuenow={item.progress}
-                                    className="h-1.5 w-full overflow-hidden
-                                    rounded-full bg-slate-700"
-                                >
-                                    <div
-                                    className={`h-full rounded-full
-                                        transition-all duration-500 ${
-                                        item.progress >= 100
-                                            ? 'bg-green-400'
-                                            : 'bg-cyan-500'
-                                        }`}
-                                    style={{ width: `${item.progress}%` }}
-                                    />
-                                </div>
-                                )}
-
-                            </div>
-                            </td>
+                              <td className="py-2 pl-4 text-right">
+                                <AffordabilityProgress
+                                  currentAmount={item.currentAmount}
+                                    targetCost={nextCost}
+                                   resourceName={item.resource?.resource_name}
+                                   gainActive={item.resource?.gain_active}
+                                />
+                              </td>
 
                               <td className={`py-2 pl-4
                                 text-right font-mono ${

@@ -6,7 +6,9 @@ import { calculateNextLevelCost, calculateAffordableLevels, AFFORDABLE_LEVEL_LIM
 import { type usePlayerResources } from '../hooks/usePlayerResources'
 import { calculateTimeToAfford, formatTimeToAfford } from '../utils/timeToAfford'
 import AffordabilityProgress from './AffordabilityProgress'
-
+import { simulatePurchases, type PurchaseItem, type PurchaseSimulation } from '../utils/purchaseMath'
+import PurchasePreview from './PurchasePreview'
+ 
 type UpgradeDefinition = {
   core_upgrade_id: number
   core_upgrade_name: string
@@ -55,11 +57,13 @@ const resourceNames: Record<number, string> = {
 export default function TitanComponentsPanel({
   userId,
   highestSector,
-  resourceState
+  resourceState,
+  resourceRevision
 }: {
   userId: string
   highestSector: number
   resourceState: ReturnType<typeof usePlayerResources>
+  resourceRevision: number
 }) {
   const {
     resources,
@@ -68,17 +72,71 @@ export default function TitanComponentsPanel({
     loadError: resourcesError
   } = resourceState
 
-  const [definitions, setDefinitions] =
-    useState<UpgradeDefinition[]>([])
-
-  const [slots, setSlots] =
-    useState<ComponentSlot[]>([])
-
+  const [definitions, setDefinitions] = useState<UpgradeDefinition[]>([])
+  const [slots, setSlots] = useState<ComponentSlot[]>([])
+  
+  const [selection, setSelection] = useState<{
+    revision: number
+    overrides: Partial<Record<number, boolean>>
+  }>({
+    revision: resourceRevision,
+    overrides: {}
+  })
+  
+  const [purchasePreview, setPurchasePreview] = useState<PurchaseSimulation | null>(null)
+  
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [savingSlot, setSavingSlot] = useState<number | null>(null)
 
+  
+  const selectedSlots = slots
+    .filter(slot => {
+      const definition = definitions.find(
+        item => item.core_upgrade_id === slot.core_upgrade_id
+      )
+  
+      if (
+        !definition ||
+        highestSector < definition.sector_unlock ||
+        !Number.isSafeInteger(slot.current_level) ||
+        slot.current_level < 0 ||
+        slot.current_level > 2147483647
+      ) {
+        return false
+      }
+  
+      const resource = resources.find(
+        item =>
+          item.resource_type_id === definition.resource_type_id
+      )
+  
+      if (!resource) return false
+  
+      const override =
+        selection.revision === resourceRevision
+          ? selection.overrides[slot.slot_number]
+          : undefined
+  
+      return override ?? resource.gain_active
+    })
+    .map(slot => slot.slot_number)
+  
+    function toggleSlot(slotNumber: number) {
+      setSelection(previous => ({
+        revision: resourceRevision,
+        overrides: {
+          ...(previous.revision === resourceRevision
+            ? previous.overrides
+            : {}),
+          [slotNumber]: !selectedSlots.includes(slotNumber)
+        }
+      }))
+    
+      setPurchasePreview(null)
+    }   
+  
   useEffect(() => {
     let cancelled = false
 
@@ -139,6 +197,7 @@ export default function TitanComponentsPanel({
     slotNumber: number,
     changes: Partial<ComponentSlot>
   ) {
+    setPurchasePreview(null)
     setSlots(current =>
       current.map(slot =>
         slot.slot_number === slotNumber
@@ -213,7 +272,86 @@ export default function TitanComponentsPanel({
       setSavingSlot(null)
     }
   }
-
+  
+  function previewPurchases() {
+    setMessage('')
+    setPurchasePreview(null)
+  
+    if (
+      selectedSlots.length === 0 ||
+      resourcesLoading ||
+      resourcesError
+    ) {
+      return
+    }
+  
+    try {
+      // Capture a single point in time for all balances.
+      const snapshotTime = Date.now()
+  
+      const balances: Record<number, string> = {}
+  
+      for (const resource of resources) {
+        const amount = calculateCurrentAmountExact(
+          resource.resource_amt,
+          getEffectiveGainRate(resource),
+          resource.last_update,
+          snapshotTime
+        )
+  
+        if (amount === null) {
+          throw new Error(
+            `Invalid balance: ${resource.resource_name}`
+          )
+        }
+  
+        balances[resource.resource_type_id] = amount
+      }
+  
+      const items: PurchaseItem[] = []
+  
+      for (const slot of slots) {
+        if (!selectedSlots.includes(slot.slot_number)) {
+          continue
+        }
+  
+        const definition = definitions.find(
+          item => item.core_upgrade_id === slot.core_upgrade_id
+        )
+  
+        if (
+          !definition ||
+          highestSector < definition.sector_unlock
+        ) {
+          throw new Error(
+            `Invalid or locked component in slot ${slot.slot_number}`
+          )
+        }
+  
+        items.push({
+          id: String(slot.slot_number),
+          name: `${definition.core_upgrade_name} (Slot ${slot.slot_number})`,
+          currentLevel: slot.current_level,
+          baseCost: String(definition.base_cost),
+          scale: String(definition.scale),
+          resourceIds: [definition.resource_type_id],
+          requestedLevels: AFFORDABLE_LEVEL_LIMIT
+        })
+      }
+  
+      const result = simulatePurchases(items, balances)
+  
+      setPurchasePreview(result)
+  
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to simulate purchases.'
+      )
+    }
+  }
+  
   if (loading) return <p>Loading Titan components...</p>
 
   if (error) {
@@ -237,7 +375,7 @@ export default function TitanComponentsPanel({
         <table className="w-full min-w-300 text-left text-sm">
           <thead className="border-b border-slate-700 text-slate-400">
             <tr>
-              <th colSpan={3}></th>
+              <th colSpan={4}></th>
 
               <th colSpan={3}
                 className="pb-2 text-center text-cyan-400">
@@ -254,6 +392,7 @@ export default function TitanComponentsPanel({
             </tr>
 
             <tr>
+              <th className="pb-3 pr-4 text-center">Buy</th>
               <th className="pb-3">Slot</th>
               <th className="pb-3">Component</th>
               <th className="pb-3">Level</th>
@@ -391,7 +530,24 @@ export default function TitanComponentsPanel({
               return (
                 <tr key={slot.slot_number}
                   className="border-b border-slate-800">
-              
+
+              {/* Purchase Selection */}
+                <td className="py-3 pr-4 text-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedSlots.includes(slot.slot_number)}
+                    disabled={
+                      locked ||
+                      !validLevel ||
+                      savingSlot !== null
+                    }
+                    onChange={() => toggleSlot(slot.slot_number)}
+                    aria-label={`Select ${config.label} for purchase`}
+                    className="h-4 w-4 cursor-pointer
+                      accent-cyan-500 disabled:opacity-40"
+                  />
+                </td>
+
               {/* Slot Name  */}       
                   <td className="py-3 pr-4 text-slate-400">
                     {config.label}
@@ -576,6 +732,36 @@ export default function TitanComponentsPanel({
             })}
           </tbody>
         </table>
+      </div>
+      
+      <div className="mt-5 flex items-center gap-4">
+        <button
+          type="button"
+          disabled={
+            selectedSlots.length === 0 ||
+            resourcesLoading ||
+            !!resourcesError ||
+            savingSlot !== null
+          }
+          onClick={previewPurchases}
+          className="rounded-md bg-cyan-500 px-4 py-2
+            font-medium text-slate-950
+            hover:bg-cyan-400 disabled:opacity-50"
+        >
+          Preview Max Purchases
+        </button>
+        
+        {purchasePreview !== null && (
+          <PurchasePreview
+            preview={purchasePreview}
+            resources={resources}
+            onClose={() => setPurchasePreview(null)}
+          />
+        )}
+        
+        <span className="text-sm text-slate-400">
+          {selectedSlots.length} selected
+        </span>
       </div>
 
       <p role="status" className="mt-4 text-sm text-slate-400">

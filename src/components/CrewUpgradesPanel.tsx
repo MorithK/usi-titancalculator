@@ -3,24 +3,11 @@ import { Fragment, useEffect, useState } from 'react'
 import { supabase } from '../utils/supabase'
 import { type usePlayerResources } from '../hooks/usePlayerResources'
 import AffordabilityProgress from './AffordabilityProgress'
-
-import {
-  formatScientific,
-  calculateCurrentAmountExact,
-  getEffectiveGainRate,
-} from '../utils/resourceMath'
-
-import {
-  calculateNextLevelCost,
-  calculateAffordableLevels,
-  AFFORDABLE_LEVEL_LIMIT,
-} from '../utils/upgradeMath'
-
-import {
-  calculateTimeToAfford,
-  formatTimeToAfford,
-  combineAffordability
-} from '../utils/timeToAfford'
+import { formatScientific, calculateCurrentAmountExact, getEffectiveGainRate } from '../utils/resourceMath'
+import { calculateNextLevelCost, calculateAffordableLevels, AFFORDABLE_LEVEL_LIMIT} from '../utils/upgradeMath'
+import { calculateTimeToAfford, formatTimeToAfford, combineAffordability } from '../utils/timeToAfford'
+import PurchasePreview from './PurchasePreview'
+import { simulatePurchases, type PurchaseItem, type PurchaseSimulation} from '../utils/purchaseMath'
 
 type UpgradeDefinition = {
   crew_upgrade_id: number
@@ -40,11 +27,13 @@ const specimenIds = [5, 6, 7, 8, 9]
 export default function CrewUpgradesPanel({
   userId,
   highestSector,
-  resourceState
+  resourceState,
+  resourceRevision
 }: {
   userId: string
   highestSector: number
   resourceState: ReturnType<typeof usePlayerResources>
+  resourceRevision: number
 }) {
   const {
     resources,
@@ -53,18 +42,82 @@ export default function CrewUpgradesPanel({
     loadError: resourcesError
   } = resourceState
 
-  const [definitions, setDefinitions] =
-    useState<UpgradeDefinition[]>([])
-
-  const [levels, setLevels] =
-    useState<Record<number, number>>({})
-
+  const [definitions, setDefinitions] = useState<UpgradeDefinition[]>([])
+  const [levels, setLevels] = useState<Record<number, number>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
-  const [savingId, setSavingId] =
-    useState<number | null>(null)
+  const [savingId, setSavingId] = useState<number | null>(null)
+  
+  const [selection, setSelection] = useState<{
+    revision: number
+    overrides: Partial<Record<number, boolean>>
+  }>({
+    revision: resourceRevision,
+    overrides: {}
+  })
+  
+  const [purchasePreview, setPurchasePreview] = useState<PurchaseSimulation | null>(null)
+  const [previewRevision, setPreviewRevision] = useState<number | null>(null)
+  const orderedDefinitions = upgradeGroups.flatMap(group =>
+      definitions.filter(item => item.upgrade_group === group)
+    )
+    
+  const selectedIds = orderedDefinitions
+   .filter(definition => {
+        const id = definition.crew_upgrade_id
+        const level = levels[id] ?? 0
+    
+        if (
+          highestSector < (definition.sector_unlock ?? 0) ||
+          !Number.isSafeInteger(level) ||
+          level < 0 ||
+          level >= 2147483647
+        ) {
+          return false
+        }
+    
+        const requiredIds = getRequiredResourceIds(
+          definition.resource_type_id
+        )
+    
+        const requiredResources = requiredIds.map(resourceId =>
+          resources.find(
+            item => item.resource_type_id === resourceId
+          )
+        )
+    
+        if (requiredResources.some(resource => !resource)) {
+          return false
+        }
+    
+        const defaultSelected = requiredResources.every(
+          resource => resource?.gain_active === true
+        )
+    
+        const override =
+          selection.revision === resourceRevision
+            ? selection.overrides[id]
+            : undefined
+    
+        return override ?? defaultSelected
+  })
+  .map(definition => definition.crew_upgrade_id)
+  
+  function toggleUpgrade(id: number, checked: boolean) {
+    setSelection(previous => ({
+      revision: resourceRevision,
+      overrides: {
+        ...(previous.revision === resourceRevision
+          ? previous.overrides
+          : {}),
+        [id]: checked
+      }
+    }))
 
+    setPurchasePreview(null)
+  }
+    
   useEffect(() => {
     let cancelled = false
 
@@ -155,7 +208,71 @@ export default function CrewUpgradesPanel({
       setSavingId(null)
     }
   }
-
+  
+  function previewPurchases() {
+    setMessage('')
+    setPurchasePreview(null)
+  
+    if (
+      selectedIds.length === 0 ||
+      resourcesLoading ||
+      resourcesError
+    ) {
+      return
+    }
+  
+    try {
+      const snapshotTime = Date.now()
+  
+      const balances: Record<number, string> = {}
+  
+      for (const resource of resources) {
+        const amount = calculateCurrentAmountExact(
+          resource.resource_amt,
+          getEffectiveGainRate(resource),
+          resource.last_update,
+          snapshotTime
+        )
+  
+        if (amount === null) {
+          throw new Error(
+            `Invalid balance: ${resource.resource_name}`
+          )
+        }
+  
+        balances[resource.resource_type_id] = amount
+      }
+  
+      const items: PurchaseItem[] = orderedDefinitions
+        .filter(definition =>
+          selectedIds.includes(definition.crew_upgrade_id)
+        )
+        .map(definition => ({
+          id: String(definition.crew_upgrade_id),
+          name: definition.crew_upgrade_name,
+          currentLevel: levels[definition.crew_upgrade_id] ?? 0,
+          baseCost: String(definition.base_cost),
+          scale: String(definition.scale),
+          resourceIds: getRequiredResourceIds(
+            definition.resource_type_id
+          ),
+          requestedLevels: AFFORDABLE_LEVEL_LIMIT
+        }))
+  
+      const result = simulatePurchases(items, balances)
+  
+      setPurchasePreview(result)
+      setPreviewRevision(resourceRevision)
+  
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to simulate purchases.'
+      )
+    }
+  }
+  
   if (loading) return <p>Loading upgrades...</p>
 
   if (error) {
@@ -179,6 +296,7 @@ export default function CrewUpgradesPanel({
           <thead className="border-b border-slate-700
             text-slate-400">
             <tr>
+              <th className="pb-3 pr-4 text-center">Buy</th>
               <th className="pb-3">Upgrade</th>
               <th className="pb-3">Level</th>
               <th className="pb-3 text-right">Next Cost</th>
@@ -193,7 +311,7 @@ export default function CrewUpgradesPanel({
               <Fragment key={group}>
                 <tr className="bg-slate-800/50">
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-3 py-2 font-semibold
                       text-cyan-400"
                   >
@@ -216,13 +334,17 @@ export default function CrewUpgradesPanel({
                       level >= 0 &&
                       level <= 2147483647
 
-                    const allSpecimens =
-                      definition.resource_type_id === ALL_SPECIMENS
+                    const allSpecimens = definition.resource_type_id === ALL_SPECIMENS
 
-                    const requiredIds = allSpecimens
-                      ? specimenIds
-                      : [definition.resource_type_id]
+                    const requiredIds = getRequiredResourceIds(
+                      definition.resource_type_id
+                    )
 
+                    function getRequiredResourceIds(resourceTypeId: number): number[] {
+                      return resourceTypeId === ALL_SPECIMENS
+                        ? specimenIds
+                        : [resourceTypeId]
+                    }
                     const nextCost = !locked && validLevel
                       ? calculateNextLevelCost(
                           String(definition.base_cost),
@@ -298,7 +420,31 @@ export default function CrewUpgradesPanel({
                     return (
                       <Fragment key={id}>
                         <tr className="border-b border-slate-800">
-                    
+                        
+                     {/* Purchase Selection */}
+                        <td className="py-3 pr-4 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(id)}
+                            disabled={
+                              locked ||
+                              !validLevel ||
+                              level >= 2147483647 ||
+                              savingId !== null ||
+                              resourcesLoading ||
+                              !!resourcesError ||
+                              requirements.some(item => !item.resource)
+                            }
+                            onChange={e => toggleUpgrade(
+                              id,
+                              e.target.checked
+                            )}
+                            aria-label={`Select ${definition.crew_upgrade_name} for purchase`}
+                            className="h-4 w-4 cursor-pointer
+                              accent-cyan-500 disabled:opacity-40"
+                          />
+                        </td>
+
                     {/* Upgrade Name  */}       
                           <td className="py-3 pr-4 text-white">
                             {definition.crew_upgrade_name}
@@ -315,6 +461,7 @@ export default function CrewUpgradesPanel({
                                 disabled={savingId !== null || locked}
                                 onFocus={e => e.currentTarget.select()}
                                 onChange={e => {
+                                  setPurchasePreview(null)
                                   setLevels(previous => ({
                                     ...previous,
                                     [id]: Number(e.target.value)
@@ -414,6 +561,8 @@ export default function CrewUpgradesPanel({
                             </button>
                           </td>
                         </tr>
+
+                        <td></td>
                        
                     {/* Corruption Cap specimen list */}      
 
@@ -466,6 +615,36 @@ export default function CrewUpgradesPanel({
             ))}
           </tbody>
         </table>
+      </div>
+      
+      <div className="mt-5 flex items-center gap-4">
+        <button
+          type="button"
+          disabled={
+            selectedSlots.length === 0 ||
+            resourcesLoading ||
+            !!resourcesError ||
+            savingSlot !== null
+          }
+          onClick={previewPurchases}
+          className="rounded-md bg-cyan-500 px-4 py-2
+            font-medium text-slate-950
+            hover:bg-cyan-400 disabled:opacity-50"
+        >
+          Preview Max Purchases
+        </button>
+        
+        {purchasePreview !== null && (
+          <PurchasePreview
+            preview={purchasePreview}
+            resources={resources}
+            onClose={() => setPurchasePreview(null)}
+          />
+        )}
+        
+        <span className="text-sm text-slate-400">
+          {selectedSlots.length} selected
+        </span>
       </div>
 
       <p role="status" className="mt-4 text-sm text-slate-400">

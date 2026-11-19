@@ -33,12 +33,14 @@ export default function CorePanel({
         userId={userId}
         highestSector={highestSector}
         resourceState={resourceState}
+        resourceRevision={resourceRevision}
       />
-      
+
       <CrewUpgradesPanel
         userId={userId}
         highestSector={highestSector}
         resourceState={resourceState}
+        resourceRevision={resourceRevision}
       />
     </>
   )

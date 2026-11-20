@@ -4,8 +4,10 @@ import { supabase } from './utils/supabase'
 import AppShell from './components/AppShell'
 import PlayerSettings from './components/PlayerSettings'
 import Login from './components/PlayerLogin'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef  } from 'react'
 import CorePanel from './components/CorePanel'
+import { applyPurchasePreview, type ApplyPurchases } from './utils/purchaseApi'
+import { type WriteGuard } from './utils/writeGuard'
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -17,25 +19,75 @@ export default function App() {
   const [region, setRegion] = useState(1)
   const [saveMessage, setSaveMessage] = useState('')
   const [resourceRevision, setResourceRevision] = useState(0)
-
+  const writeLock = useRef(false)
+  const [writing, setWriting] = useState(false)
+  
+  const writeGuard: WriteGuard = {
+    begin: () => {
+      if (writeLock.current) return false
+  
+      writeLock.current = true
+      setWriting(true)
+      return true
+    },
+  
+    end: () => {
+      writeLock.current = false
+      setWriting(false)
+    }
+  }
+  
   async function savePlayerData() {
-    if (!user) return
-
-    const { error } = await supabase.rpc(
-      'save_player_settings',
-      {
-        p_highest_sector: highestSector,
-        p_region_id: region
+    if (!user || !writeGuard.begin()) return
+  
+    try {
+      const { error } = await supabase.rpc(
+        'save_player_settings',
+        {
+          p_highest_sector: highestSector,
+          p_region_id: region
+        }
+      )
+  
+      if (error) {
+        setSaveMessage(`Error: ${error.message}`)
+      } else {
+        setSaveMessage('Player data saved successfully!')
+        setResourceRevision(previous => previous + 1)
       }
-    )
-
-    if (error) {
-      setSaveMessage(`Error: ${error.message}`)
-    } else {
-      setSaveMessage('Player data saved successfully!')
+    } catch (error) {
+      setSaveMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to save settings.'
+      )
+    } finally {
+      writeGuard.end()
+    }
+  }
+  
+  const applyPurchases: ApplyPurchases = async (
+    purchaseType,
+    preview
+  ) => {
+    if (!writeGuard.begin()) {
+      throw new Error('Another save is in progress.')
+    }
+  
+    try {
+      const result = await applyPurchasePreview(
+        purchaseType,
+        preview
+      )
+  
       setResourceRevision(previous => previous + 1)
+  
+      return result
+  
+    } finally {
+      writeGuard.end()
     }
-    }
+  } 
 
     useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -117,7 +169,9 @@ export default function App() {
     userEmail={user.email ?? 'Signed in'}
     onSignOut={() => void supabase.auth.signOut()}
   >
-    <div className="space-y-6">
+    <fieldset disabled={writing}
+      className="min-w-0 space-y-6 border-0 p-0"
+>
       <PlayerSettings
         highestSector={highestSector}
         region={region}
@@ -132,8 +186,10 @@ export default function App() {
         userId={user.id}
         highestSector={highestSector}
         resourceRevision={resourceRevision}
-      />    
-    </div>
+        writeGuard={writeGuard}
+        onApplyPurchases={applyPurchases}
+      />   
+    </fieldset>
   </AppShell>
   )
 }

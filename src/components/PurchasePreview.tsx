@@ -7,12 +7,14 @@ type PurchasePreviewProps = {
   preview: PurchaseSimulation
   resources: Resource[]
   onClose: () => void
+  onApply: () => void
 }
 
-export default function PurchasePreview({
+export default function purchasePreview({
   preview,
   resources,
-  onClose
+  onClose,
+  onApply
 }: PurchasePreviewProps) {
   return (
     <div className="mt-5 rounded-lg border
@@ -54,13 +56,24 @@ export default function PurchasePreview({
                   {item.currentLevel}
                 </td>
 
-                <td className="py-2 text-right font-mono text-green-400">
+            {/* Purchased Levels */}
+                <td className={`py-2 text-right font-mono ${
+                  item.levelsBought > 0
+                    ? 'text-green-400'
+                    : 'text-red-400'
+                }`}>
                   +{item.levelsBought}
                 </td>
 
-                <td className="py-2 text-right font-mono text-cyan-400">
-                  {item.finalLevel}
+            {/* Final Level */}
+                <td className={`py-2 text-right font-mono ${
+                  item.levelsBought > 0
+                    ? 'text-cyan-400'
+                    : 'text-slate-500'
+                }`}>
+                  {item.levelsBought > 0 ? item.finalLevel : '-'}
                 </td>
+
 
               </tr>
             ))}
@@ -114,14 +127,30 @@ export default function PurchasePreview({
         </tbody>
       </table>
 
-      <button
-        type="button"
-        onClick={onClose}
-        className="mt-4 text-sm text-slate-400
-          hover:text-white"
-      >
-        Close Preview
-      </button>
+      <div className="mt-5 flex items-center justify-between
+        border-t border-slate-700 pt-4">
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-sm text-slate-400 hover:text-white"
+        >
+          Close Preview
+        </button>
+
+        <button
+          type="button"
+          onClick={onApply}
+          disabled={preview.totalLevelsBought === 0}
+          className="rounded-md bg-emerald-500 px-4 py-2
+            font-medium text-slate-950
+            hover:bg-emerald-400 disabled:opacity-40"
+        >
+          Apply Purchases
+        </button>
+
+      </div>
+
 
     </div>
   )

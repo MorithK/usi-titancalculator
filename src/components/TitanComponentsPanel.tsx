@@ -8,6 +8,8 @@ import { calculateTimeToAfford, formatTimeToAfford } from '../utils/timeToAfford
 import AffordabilityProgress from './AffordabilityProgress'
 import { simulatePurchases, type PurchaseItem, type PurchaseSimulation } from '../utils/purchaseMath'
 import PurchasePreview from './PurchasePreview'
+import { type WriteGuard } from '../utils/writeGuard'
+import { type ApplyPurchases } from '../utils/purchaseApi'
  
 type UpgradeDefinition = {
   core_upgrade_id: number
@@ -58,12 +60,16 @@ export default function TitanComponentsPanel({
   userId,
   highestSector,
   resourceState,
-  resourceRevision
+  resourceRevision,
+  writeGuard,
+  onApplyPurchases
 }: {
   userId: string
   highestSector: number
   resourceState: ReturnType<typeof usePlayerResources>
   resourceRevision: number
+  writeGuard: WriteGuard
+  onApplyPurchases: ApplyPurchases
 }) {
   const {
     resources,
@@ -84,7 +90,7 @@ export default function TitanComponentsPanel({
   })
   
   const [purchasePreview, setPurchasePreview] = useState<PurchaseSimulation | null>(null)
-  
+  const [previewRevision, setPreviewRevision] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -244,6 +250,11 @@ export default function TitanComponentsPanel({
       return
     }
 
+    if (!writeGuard.begin()) {
+      setMessage('Another save is in progress.')
+      return
+    }
+
     setSavingSlot(slot.slot_number)
     setMessage('')
 
@@ -287,7 +298,7 @@ export default function TitanComponentsPanel({
   
     try {
       // Capture a single point in time for all balances.
-      const snapshotTime = Date.now()
+      const snapshotTime = nowMs
   
       const balances: Record<number, string> = {}
   
@@ -330,6 +341,7 @@ export default function TitanComponentsPanel({
   
         items.push({
           id: String(slot.slot_number),
+          expectedUpgradeId: slot.core_upgrade_id,
           name: `${definition.core_upgrade_name} (Slot ${slot.slot_number})`,
           currentLevel: slot.current_level,
           baseCost: String(definition.base_cost),
@@ -342,6 +354,7 @@ export default function TitanComponentsPanel({
       const result = simulatePurchases(items, balances)
   
       setPurchasePreview(result)
+      setPreviewRevision(resourceRevision)
   
     } catch (error) {
       setMessage(
@@ -351,6 +364,51 @@ export default function TitanComponentsPanel({
       )
     }
   }
+
+  
+  async function applyPreview() {
+    if (
+      purchasePreview === null ||
+      purchasePreview.totalLevelsBought === 0 ||
+      previewRevision !== resourceRevision ||
+      resourcesLoading ||
+      resourcesError
+    ) {
+      return
+    }
+  
+    setMessage('')
+  
+    try {
+      const result = await onApplyPurchases(
+        'titan',
+        purchasePreview
+      )
+  
+      setSlots(previous =>
+        previous.map(slot => ({
+          ...slot,
+          current_level:
+            result.levels[String(slot.slot_number)] ??
+            slot.current_level
+        }))
+      )
+  
+      setPurchasePreview(null)
+  
+      setMessage(
+        `${result.total_levels_bought} levels purchased successfully.`
+      )
+  
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? `Purchase failed: ${error.message}`
+          : 'Purchase failed.'
+      )
+    }
+  }
+  
   
   if (loading) return <p>Loading Titan components...</p>
 
@@ -751,14 +809,16 @@ export default function TitanComponentsPanel({
           Preview Max Purchases
         </button>
         
-        {purchasePreview !== null && (
-          <PurchasePreview
-            preview={purchasePreview}
-            resources={resources}
-            onClose={() => setPurchasePreview(null)}
-          />
+        {purchasePreview !== null &&
+          previewRevision === resourceRevision && (
+            <PurchasePreview
+              preview={purchasePreview}
+              resources={resources}
+              onClose={() => setPurchasePreview(null)}
+              onApply={() => void applyPreview()}
+            />
         )}
-        
+
         <span className="text-sm text-slate-400">
           {selectedSlots.length} selected
         </span>

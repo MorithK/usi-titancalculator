@@ -8,7 +8,8 @@ import { calculateNextLevelCost, calculateAffordableLevels, AFFORDABLE_LEVEL_LIM
 import { calculateTimeToAfford, formatTimeToAfford, combineAffordability } from '../utils/timeToAfford'
 import PurchasePreview from './PurchasePreview'
 import { simulatePurchases, type PurchaseItem, type PurchaseSimulation} from '../utils/purchaseMath'
-
+import { type WriteGuard } from '../utils/writeGuard'
+import { type ApplyPurchases } from '../utils/purchaseApi'
 type UpgradeDefinition = {
   crew_upgrade_id: number
   crew_upgrade_name: string
@@ -20,20 +21,29 @@ type UpgradeDefinition = {
 }
 
 const upgradeGroups = ['Crew', 'Compute', 'Reactor']
-
 const ALL_SPECIMENS = 10
 const specimenIds = [5, 6, 7, 8, 9]
+
+function getRequiredResourceIds(resourceTypeId: number): number[] {
+  return resourceTypeId === ALL_SPECIMENS
+    ? specimenIds
+    : [resourceTypeId]
+}
 
 export default function CrewUpgradesPanel({
   userId,
   highestSector,
   resourceState,
-  resourceRevision
+  resourceRevision,
+  writeGuard,
+  onApplyPurchases
 }: {
   userId: string
   highestSector: number
   resourceState: ReturnType<typeof usePlayerResources>
   resourceRevision: number
+  writeGuard: WriteGuard
+  onApplyPurchases: ApplyPurchases
 }) {
   const {
     resources,
@@ -117,6 +127,46 @@ export default function CrewUpgradesPanel({
 
     setPurchasePreview(null)
   }
+
+  async function applyPreview() {
+    if (
+      purchasePreview === null ||
+      purchasePreview.totalLevelsBought === 0 ||
+      previewRevision !== resourceRevision ||
+      resourcesLoading ||
+      resourcesError
+    ) {
+      return
+    }
+  
+    setMessage('')
+  
+    try {
+      const result = await onApplyPurchases(
+        'crew',
+        purchasePreview
+      )
+  
+      setLevels(previous => ({
+        ...previous,
+        ...result.levels
+      }))
+  
+      setPurchasePreview(null)
+  
+      setMessage(
+        `${result.total_levels_bought} levels purchased successfully.`
+      )
+  
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? `Purchase failed: ${error.message}`
+          : 'Purchase failed.'
+      )
+    }
+  }
+  
     
   useEffect(() => {
     let cancelled = false
@@ -179,6 +229,11 @@ export default function CrewUpgradesPanel({
       return
     }
 
+    if (!writeGuard.begin()) {
+      setMessage('Another save is in progress.')
+      return
+    }
+
     setSavingId(definition.crew_upgrade_id)
     setMessage('')
 
@@ -222,7 +277,7 @@ export default function CrewUpgradesPanel({
     }
   
     try {
-      const snapshotTime = Date.now()
+      const snapshotTime = nowMs
   
       const balances: Record<number, string> = {}
   
@@ -249,6 +304,7 @@ export default function CrewUpgradesPanel({
         )
         .map(definition => ({
           id: String(definition.crew_upgrade_id),
+          expectedUpgradeId: definition.crew_upgrade_id,
           name: definition.crew_upgrade_name,
           currentLevel: levels[definition.crew_upgrade_id] ?? 0,
           baseCost: String(definition.base_cost),
@@ -340,11 +396,6 @@ export default function CrewUpgradesPanel({
                       definition.resource_type_id
                     )
 
-                    function getRequiredResourceIds(resourceTypeId: number): number[] {
-                      return resourceTypeId === ALL_SPECIMENS
-                        ? specimenIds
-                        : [resourceTypeId]
-                    }
                     const nextCost = !locked && validLevel
                       ? calculateNextLevelCost(
                           String(definition.base_cost),
@@ -561,8 +612,6 @@ export default function CrewUpgradesPanel({
                             </button>
                           </td>
                         </tr>
-
-                        <td></td>
                        
                     {/* Corruption Cap specimen list */}      
 
@@ -573,6 +622,7 @@ export default function CrewUpgradesPanel({
                               className="bg-slate-900/40
                                 text-xs text-slate-400"
                             >
+                              <td></td>
                               <td className="py-2 pl-8">
                                 {item.resource?.resource_name ??
                                   'Unknown specimen'}
@@ -616,15 +666,15 @@ export default function CrewUpgradesPanel({
           </tbody>
         </table>
       </div>
-      
+
       <div className="mt-5 flex items-center gap-4">
         <button
           type="button"
           disabled={
-            selectedSlots.length === 0 ||
+            selectedIds.length === 0 ||
             resourcesLoading ||
             !!resourcesError ||
-            savingSlot !== null
+            savingId !== null
           }
           onClick={previewPurchases}
           className="rounded-md bg-cyan-500 px-4 py-2
@@ -633,19 +683,21 @@ export default function CrewUpgradesPanel({
         >
           Preview Max Purchases
         </button>
-        
-        {purchasePreview !== null && (
-          <PurchasePreview
-            preview={purchasePreview}
-            resources={resources}
-            onClose={() => setPurchasePreview(null)}
-          />
+
+        {purchasePreview !== null &&
+          previewRevision === resourceRevision && (
+            <PurchasePreview
+              preview={purchasePreview}
+              resources={resources}
+              onClose={() => setPurchasePreview(null)}
+              onApply={() => void applyPreview()}
+            />
         )}
-        
+
         <span className="text-sm text-slate-400">
-          {selectedSlots.length} selected
+          {selectedIds.length} selected
         </span>
-      </div>
+      </div>        
 
       <p role="status" className="mt-4 text-sm text-slate-400">
         {message}

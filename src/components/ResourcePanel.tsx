@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { supabase } from '../utils/supabase'
 import { calculateCurrentAmount, calculateCurrentAmountExact, formatScientific, getEffectiveGainRate} from '../utils/resourceMath'
 import { type Resource, type usePlayerResources} from '../hooks/usePlayerResources'
+import { type WriteGuard } from '../utils/writeGuard'
 
 const resourceImages: Record<string, string> = {
   Capital: 'Frag_Capital.svg',
@@ -19,11 +20,13 @@ const resourceImages: Record<string, string> = {
   export default function ResourcePanel({
     userId,
     resourceState,
-    resourceType = 'Fragment'
+    resourceType = 'Fragment',
+    writeGuard
   }: {
     userId: string
     resourceState: ReturnType<typeof usePlayerResources>
     resourceType?: 'Fragment' | 'Specimen'
+    writeGuard: WriteGuard
   }) {
   const [savingId, setSavingId] = useState<number | null>(null)
   const [message, setMessage] = useState('')
@@ -47,7 +50,15 @@ const resourceImages: Record<string, string> = {
     newRate: string,
     savedAt: string
   ): Promise<boolean> {
-    if (savingId !== null) return false
+    if (savingId !== null) {
+      setMessage('Another save is in progress.')
+      return false
+    }
+
+    if (!writeGuard.begin()) {
+      setMessage('Another save is in progress.')
+      return false
+    }
 
     setSavingId(resource.resource_type_id)
     setMessage('')

@@ -50,8 +50,10 @@ export function usePlayerResources(userId: string, resourceRevision: number) {
         console.log('Resource load error:', error)
         console.table(data)
         if (error) {
+          setResources([])
           setLoadError(error.message)
         } else {
+          setLoadError('')
           setResources(
             (data ?? []).map(row => ({
               ...row,

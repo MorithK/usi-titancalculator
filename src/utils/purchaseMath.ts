@@ -10,15 +10,16 @@ const GameDecimal = Decimal.clone({
   precision: 50
 })
 
-export type PurchaseItem = {
-  id: string
-  name: string
-  currentLevel: number
-  baseCost: string
-  scale: string
-  resourceIds: number[]
-  requestedLevels: number
-}
+  export type PurchaseItem = {
+    id: string
+    expectedUpgradeId: number
+    name: string
+    currentLevel: number
+    baseCost: string
+    scale: string
+    resourceIds: number[]
+    requestedLevels: number
+  }
 
 export type PurchaseResult = PurchaseItem & {
   finalLevel: number
@@ -149,8 +150,7 @@ export function simulatePurchases(
   }
 
   return {
-    items: activeItems.map(({ nextCost, ...item }) => item),
-
+    items: activeItems.map(({ nextCost: _nextCost, ...item }) => item),
     remainingBalances: Object.fromEntries(
       Array.from(balances, ([id, amount]) => [
         id,

@@ -8,6 +8,7 @@ import { useEffect, useState, useRef  } from 'react'
 import CorePanel from './components/CorePanel'
 import { applyPurchasePreview, type ApplyPurchases } from './utils/purchaseApi'
 import { type WriteGuard } from './utils/writeGuard'
+import SaveImportTest from "@/components/SaveImportTest";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -189,6 +190,7 @@ export default function App() {
         writeGuard={writeGuard}
         onApplyPurchases={applyPurchases}
       />   
+      
     </fieldset>
   </AppShell>
   )

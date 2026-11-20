@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { decodeUSISave } from "@/lib/saveImport/decoder";
 import type { USIDecodedSave } from "@/lib/saveImport/types";
+import { extractResources } from "@/lib/saveImport/extractors/resources";
+import { mapResources } from "@/lib/saveImport/resourceMapping";
 
 export default function SaveImportTest() {
   const [save, setSave] = useState<USIDecodedSave | null>(null);
@@ -19,11 +21,31 @@ export default function SaveImportTest() {
       const text = await file.text();
       const decoded = await decodeUSISave(text);
 
-      setSave(decoded);
+   
 
       console.log("Decoded USI save:", decoded);
       console.log("PlayerInfo:", decoded.data.PlayerInfo);
       console.log("BattleArea:", decoded.data.BattleArea);
+      const extractedResources = extractResources(decoded);
+
+      console.table(extractedResources);
+      
+      console.table(
+        extractedResources.filter(resource =>
+          resource.gameResourceKey.endsWith("Specimen")
+        )        
+      );
+      const mapping = await mapResources(extractedResources);
+
+      console.log("Resource mapping:", mapping);
+      console.table(mapping.mapped);
+
+      console.log("Mapped resources:", mapping.mapped.length);
+      console.log("Unmapped resources:", mapping.unmapped.length);
+      console.log("Missing resources:", mapping.missing);
+
+      setSave(decoded);
+
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Import failed."
@@ -33,6 +55,7 @@ export default function SaveImportTest() {
     } finally {
       setLoading(false);
     }
+
   }
 
   const battleArea = save?.data.BattleArea;

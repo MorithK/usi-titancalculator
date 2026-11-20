@@ -5,7 +5,6 @@ import CrewUpgradesPanel from './CrewUpgradesPanel'
 import { usePlayerResources } from '../hooks/usePlayerResources'
 import { type WriteGuard } from '../utils/writeGuard'
 import { type ApplyPurchases } from '../utils/purchaseApi'
-import SaveImportTest from "@/components/SaveImportTest";
 
 export default function CorePanel({
   userId,
@@ -27,7 +26,6 @@ export default function CorePanel({
 
   return (
     <>
-    <SaveImportTest />
       <ResourcePanel
         userId={userId}
         resourceState={resourceState}

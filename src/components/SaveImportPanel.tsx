@@ -5,17 +5,28 @@ import { Input } from "@/components/ui/input";
 import { decodeUSISave } from "@/lib/saveImport/decoder";
 import type { USIDecodedSave } from "@/lib/saveImport/types";
 import { extractResources } from "@/lib/saveImport/extractors/resources";
-import { mapResources } from "@/lib/saveImport/resourceMapping";
+import { mapResources, type ResourceMappingResult } from "@/lib/saveImport/resourceMapping";
+import ResourceImportPreview from "@/components/saveImport/ResourceImportPreview";
+import type { ApplyResourceImport } from "@/lib/saveImport/importApi";
 
-export default function SaveImportTest() {
+export default function SaveImportPanel({
+  onApplyResourceImport
+}: {
+  onApplyResourceImport: ApplyResourceImport
+}) {  
   const [save, setSave] = useState<USIDecodedSave | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [mapping, setMapping] = useState<ResourceMappingResult | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
 
   async function handleImport(file: File) {
+    setImportMessage(null);
     setLoading(true);
     setError(null);
     setSave(null);
+    setMapping(null);
 
     try {
       const text = await file.text();
@@ -36,6 +47,7 @@ export default function SaveImportTest() {
         )        
       );
       const mapping = await mapResources(extractedResources);
+      setMapping(mapping);
 
       console.log("Resource mapping:", mapping);
       console.table(mapping.mapped);
@@ -58,6 +70,38 @@ export default function SaveImportTest() {
 
   }
 
+  async function handleApplyImport() {
+    if (!mapping || mapping.mapped.length === 0) {
+      return;
+    }
+  
+    setImporting(true);
+    setError(null);
+    setImportMessage(null);
+  
+    try {
+      const result = await onApplyResourceImport(
+        mapping.mapped
+      );
+  
+      setImportMessage(
+        `${result.resources_imported} resources imported successfully.`
+      );
+  
+      setSave(null);
+      setMapping(null);
+  
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Resource import failed."
+      );
+    } finally {
+      setImporting(false);
+    }
+  }
+
   const battleArea = save?.data.BattleArea;
   const playerInfo = save?.data.PlayerInfo;
 
@@ -74,7 +118,7 @@ export default function SaveImportTest() {
       <Input
         type="file"
         accept=".txt"
-        disabled={loading}
+        disabled={loading || importing}
         onChange={(event) => {
           const file = event.target.files?.[0];
 
@@ -124,13 +168,45 @@ export default function SaveImportTest() {
                 : "Unknown"}
             </span>
           </div>
+          
+          {importMessage && (
+            <p role="status" className="text-green-400">
+              {importMessage}
+            </p>
+          )}
+          {mapping && (
+            <ResourceImportPreview mapping={mapping} />
+          )}
+
+          <div className="flex items-center justify-end gap-2">
 
           <Button
             variant="outline"
-            onClick={() => setSave(null)}
+            disabled={importing}
+            onClick={() => {
+              setSave(null);
+              setMapping(null);
+              setError(null);
+              setImportMessage(null);
+            }}
           >
-            Clear
+            Cancel
           </Button>
+
+          <Button
+            disabled={
+              importing ||
+              !mapping ||
+              mapping.mapped.length === 0
+            }
+            onClick={() => void handleApplyImport()}
+          >
+            {importing
+              ? "Importing..."
+              : "Apply Resource Import"}
+          </Button>
+
+          </div>
         </div>
       )}
     </div>

@@ -8,6 +8,7 @@ import {
   FlaskConical,
   GitCompareArrows,
   LogOut,
+  FileUp,
   type LucideIcon
 } from 'lucide-react'
 
@@ -18,6 +19,7 @@ type Section =
   | 'crew'
   | 'synth'
   | 'simulation'
+  | 'saveImport'  
 
 type NavItem = {
   id: Section
@@ -31,20 +33,23 @@ const navigation: NavItem[] = [
   { id: 'warp', label: 'Warp', icon: Orbit },
   { id: 'crew', label: 'Crew', icon: Users },
   { id: 'synth', label: 'Synth', icon: FlaskConical },
-  { id: 'simulation', label: 'Simulation', icon: GitCompareArrows }
+  { id: 'simulation', label: 'Simulation', icon: GitCompareArrows },
+  { id: 'saveImport', label: 'Save Game Import', icon: FileUp }
 ]
 
 type AppShellProps = {
   userEmail: string
   onSignOut: () => void
-  children: ReactNode
+  sections: Partial<Record<Section, ReactNode>>
+  navigationDisabled?: boolean
 }
 
 export default function AppShell({
   userEmail,
   onSignOut,
-  children
-}: AppShellProps) {
+  sections,
+  navigationDisabled = false
+}: AppShellProps) {  
   const [section, setSection] = useState<Section>('core')
 
   function navigationButton(item: NavItem) {
@@ -55,6 +60,7 @@ export default function AppShell({
       <button
         key={item.id}
         type="button"
+        disabled={navigationDisabled}
         onClick={() => setSection(item.id)}
         aria-current={active ? 'page' : undefined}
         className={`flex items-center gap-3 rounded-lg px-4 py-3
@@ -143,10 +149,8 @@ export default function AppShell({
             </p>
           </div>
 
-          {section === 'core' ? (
-            children
-          ) : (
-            <div className="rounded-xl border border-slate-800
+          {sections[section] ?? (
+              <div className="rounded-xl border border-slate-800
               bg-[#111827] p-8">
               <h3 className="text-lg font-semibold text-white">
                 {selectedSection?.label}

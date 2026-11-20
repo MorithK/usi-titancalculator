@@ -8,7 +8,9 @@ import { useEffect, useState, useRef  } from 'react'
 import CorePanel from './components/CorePanel'
 import { applyPurchasePreview, type ApplyPurchases } from './utils/purchaseApi'
 import { type WriteGuard } from './utils/writeGuard'
-import SaveImportTest from "@/components/SaveImportTest";
+import { importPlayerResources, type ApplyResourceImport } from "@/lib/saveImport/importApi";
+import SaveImportTest from "@/components/SaveImportPanel";
+
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -88,7 +90,25 @@ export default function App() {
     } finally {
       writeGuard.end()
     }
-  } 
+  }
+  
+  const applyResourceImport: ApplyResourceImport =
+  async (resources) => {
+
+    if (!writeGuard.begin()) {
+      throw new Error("Another save is in progress.");
+    }
+
+    try {
+      const result = await importPlayerResources(resources);
+
+      setResourceRevision(previous => previous + 1);
+
+      return result;
+    } finally {
+      writeGuard.end();
+    }
+  };
 
     useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -165,35 +185,51 @@ export default function App() {
     )
   }
 
+  
   return (
-  <AppShell
-    userEmail={user.email ?? 'Signed in'}
-    onSignOut={() => void supabase.auth.signOut()}
-  >
-    <fieldset disabled={writing}
-      className="min-w-0 space-y-6 border-0 p-0"
->
-      <PlayerSettings
-        highestSector={highestSector}
-        region={region}
-        saveMessage={saveMessage}
-        onSectorChange={setHighestSector}
-        onRegionChange={setRegion}
-        onSave={() => void savePlayerData()}
-      />
-
-      <CorePanel
-        key={user.id}
-        userId={user.id}
-        highestSector={highestSector}
-        resourceRevision={resourceRevision}
-        writeGuard={writeGuard}
-        onApplyPurchases={applyPurchases}
-      />   
-      
-    </fieldset>
-  </AppShell>
+    <AppShell
+      key={user.id}
+      userEmail={user.email ?? 'Signed in'}
+      onSignOut={() => void supabase.auth.signOut()}
+      navigationDisabled={writing}
+      sections={{
+        core: (
+          <fieldset
+            disabled={writing}
+            className="min-w-0 space-y-6 border-0 p-0"
+          >
+            <PlayerSettings
+              highestSector={highestSector}
+              region={region}
+              saveMessage={saveMessage}
+              onSectorChange={setHighestSector}
+              onRegionChange={setRegion}
+              onSave={() => void savePlayerData()}
+            />
+  
+            <CorePanel
+              userId={user.id}
+              highestSector={highestSector}
+              resourceRevision={resourceRevision}
+              writeGuard={writeGuard}
+              onApplyPurchases={applyPurchases}
+            />
+          </fieldset>
+        ),
+  
+        saveImport: (
+          <fieldset
+            disabled={writing}
+            className="min-w-0 space-y-6 border-0 p-0"
+          >
+            <SaveImportTest
+              onApplyResourceImport={applyResourceImport}
+            />
+          </fieldset>
+        )
+      }}
+    />
   )
-}
+  }
 
 

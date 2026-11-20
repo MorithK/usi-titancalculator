@@ -261,6 +261,7 @@ export default function CrewUpgradesPanel({
       )
     } finally {
       setSavingId(null)
+      writeGuard.end()
     }
   }
   

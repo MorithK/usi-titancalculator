@@ -281,6 +281,7 @@ export default function TitanComponentsPanel({
       )
     } finally {
       setSavingSlot(null)
+      writeGuard.end()
     }
   }
   

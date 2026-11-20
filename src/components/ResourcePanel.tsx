@@ -108,6 +108,7 @@ const resourceImages: Record<string, string> = {
 
     } finally {
       setSavingId(null)
+      writeGuard.end()
     }
   }
 

@@ -36,8 +36,8 @@ export function usePlayerResources(userId: string, resourceRevision: number) {
         resource_type_id,
         resource_type,
         resource_name,
-        resource_amt,
-        resource_gain_rate,
+        resource_amt::text,
+        resource_gain_rate::text,
         last_update,
         gain_active
       `)

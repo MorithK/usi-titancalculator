@@ -12,7 +12,7 @@ export async function decodeUSISave(
   const cleaned = exportString.replace(/\s/g, "");
 
   if (!cleaned) {
-    throw new Error("The save file is empty.");
+    throw new Error("The exported save string is empty.");
   }
 
   let bytes: Uint8Array<ArrayBuffer>;

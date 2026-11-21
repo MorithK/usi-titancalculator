@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { decodeUSISave } from "@/lib/saveImport/decoder";
 import type { USIDecodedSave } from "@/lib/saveImport/types";
 import { extractResources } from "@/lib/saveImport/extractors/resources";
@@ -20,8 +19,14 @@ export default function SaveImportPanel({
   const [mapping, setMapping] = useState<ResourceMappingResult | null>(null);
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [exportString, setExportString] = useState("");
 
-  async function handleImport(file: File) {
+  async function handleImport() {
+    if (!exportString.trim()) {
+      setError("Paste your exported game save first.");
+      return;
+    }   
+    
     setImportMessage(null);
     setLoading(true);
     setError(null);
@@ -29,33 +34,11 @@ export default function SaveImportPanel({
     setMapping(null);
 
     try {
-      const text = await file.text();
-      const decoded = await decodeUSISave(text);
-
-   
-
-      console.log("Decoded USI save:", decoded);
-      console.log("PlayerInfo:", decoded.data.PlayerInfo);
-      console.log("BattleArea:", decoded.data.BattleArea);
+      const decoded = await decodeUSISave(exportString);
       const extractedResources = extractResources(decoded);
-
-      console.table(extractedResources);
-      
-      console.table(
-        extractedResources.filter(resource =>
-          resource.gameResourceKey.endsWith("Specimen")
-        )        
-      );
       const mapping = await mapResources(extractedResources);
+   
       setMapping(mapping);
-
-      console.log("Resource mapping:", mapping);
-      console.table(mapping.mapped);
-
-      console.log("Mapped resources:", mapping.mapped.length);
-      console.log("Unmapped resources:", mapping.unmapped.length);
-      console.log("Missing resources:", mapping.missing);
-
       setSave(decoded);
 
     } catch (err) {
@@ -90,6 +73,7 @@ export default function SaveImportPanel({
   
       setSave(null);
       setMapping(null);
+      setExportString("");
   
     } catch (err) {
       setError(
@@ -112,28 +96,69 @@ export default function SaveImportPanel({
   return (
     <div className="space-y-4 rounded-lg border p-4">
       <h2 className="text-lg font-semibold">
-        Save Import Test
+          Import Game Save
       </h2>
 
-      <Input
-        type="file"
-        accept=".txt"
-        disabled={loading || importing}
-        onChange={(event) => {
-          const file = event.target.files?.[0];
 
-          if (file) {
-            void handleImport(file);
-          }
+      <div className="space-y-3">
+        <p className="text-sm text-slate-400">
+          Open Settings in Unnamed Space Idle and select Export.
+          Paste the copied save string below.
+        </p>
 
-          event.target.value = "";
-        }}
-      />
+        <textarea
+          aria-label="Exported game save"
+          value={exportString}
+          onChange={(event) => {
+            setExportString(event.target.value);
+            setError(null);
+          }}
+          placeholder="Paste your exported save string here (H4sIA...)"
+          rows={5}
+          spellCheck={false}
+          autoComplete="off"
+          disabled={loading || importing}
+          className="w-full resize-y rounded-lg border border-slate-700
+            bg-slate-900 p-3 font-mono text-xs text-slate-200
+            placeholder:text-slate-600 focus:border-cyan-400
+            focus:outline-none"
+        />
+
+      <div className="flex justify-end gap-2">
+        <Button
+          variant="outline"
+          disabled={loading || importing || !exportString}
+          onClick={() => {
+            setExportString("");
+            setSave(null);
+            setMapping(null);
+            setError(null);
+            setImportMessage(null);
+          }}
+        >
+          Clear
+        </Button>
+
+        <Button
+          disabled={loading || importing || !exportString.trim()}
+          onClick={() => void handleImport()}
+        >
+          {loading ? "Decoding..." : "Decode & Preview"}
+        </Button>
+      </div>
+    </div>
+
 
       {loading && <p>Decoding save file...</p>}
 
       {error && (
         <p className="text-destructive">{error}</p>
+      )}
+
+      {importMessage && (
+        <p role="status" className="text-green-400">
+          {importMessage}
+        </p>
       )}
 
       {save && (
@@ -169,11 +194,6 @@ export default function SaveImportPanel({
             </span>
           </div>
           
-          {importMessage && (
-            <p role="status" className="text-green-400">
-              {importMessage}
-            </p>
-          )}
           {mapping && (
             <ResourceImportPreview mapping={mapping} />
           )}

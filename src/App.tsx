@@ -9,8 +9,7 @@ import CorePanel from './components/CorePanel'
 import { applyPurchasePreview, type ApplyPurchases } from './utils/purchaseApi'
 import { type WriteGuard } from './utils/writeGuard'
 import { importPlayerResources, type ApplyResourceImport } from "@/lib/saveImport/importApi";
-import SaveImportTest from "@/components/SaveImportPanel";
-
+import SaveImportPanel from "@/components/SaveImportPanel";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -222,7 +221,7 @@ export default function App() {
             disabled={writing}
             className="min-w-0 space-y-6 border-0 p-0"
           >
-            <SaveImportTest
+            <SaveImportPanel
               onApplyResourceImport={applyResourceImport}
             />
           </fieldset>

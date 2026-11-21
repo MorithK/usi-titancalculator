@@ -22,7 +22,7 @@ export interface ImportedProgression {
   currentRegionName: string;
   currentSector: number;
   currentSectorId: string;
-  currentSectorVariant: string;
+  currentSectorVariant: string | null;
   nextUmbraSector: number;
   regions: RegionalProgression[];
 }
@@ -126,14 +126,12 @@ export function extractProgression(
     throw new Error("Invalid sector identifier.");
     }
 
-    const match = sectorId.match(/_([a-z])$/i);
+    const match = sectorId.match(/_([ab])$/i);
 
-    if (!match) {
-    throw new Error("Unrecognized sector variant.");
-    }
-
-    const currentSectorVariant = match[1].toUpperCase();
-
+    const currentSectorVariant = match
+      ? match[1].toUpperCase()
+      : null;
+      
   if (typeof battle.sector_id_load !== "string") {
     throw new Error("Invalid current sector identifier.");
   }

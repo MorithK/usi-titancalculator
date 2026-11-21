@@ -22,6 +22,7 @@ export interface ImportedProgression {
   currentRegionName: string;
   currentSector: number;
   currentSectorId: string;
+  currentSectorVariant: string;
   nextUmbraSector: number;
   regions: RegionalProgression[];
 }
@@ -119,6 +120,20 @@ export function extractProgression(
     "sector_number"
   );
 
+  const sectorId = battle.sector_id_load;
+
+    if (typeof sectorId !== "string") {
+    throw new Error("Invalid sector identifier.");
+    }
+
+    const match = sectorId.match(/_([a-z])$/i);
+
+    if (!match) {
+    throw new Error("Unrecognized sector variant.");
+    }
+
+    const currentSectorVariant = match[1].toUpperCase();
+
   if (typeof battle.sector_id_load !== "string") {
     throw new Error("Invalid current sector identifier.");
   }
@@ -132,6 +147,7 @@ export function extractProgression(
     currentRegionName: REGION_NAMES[layer],
     currentSector,
     currentSectorId: battle.sector_id_load,
+    currentSectorVariant,
     nextUmbraSector: readInteger(
       veil.umbra_sector_number,
       "umbra_sector_number"

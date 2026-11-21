@@ -60,24 +60,27 @@ export default function SaveImportPanel({
   }
 
   async function handleApplyImport() {
-    if (!mapping || mapping.mapped.length === 0) {
+    if (
+      !mapping ||
+      mapping.mapped.length === 0 ||
+      !progression
+    ) {
       return;
-    }
-  
+    }  
     setImporting(true);
     setError(null);
     setImportMessage(null);
-    setProgression(null);
   
     try {
       const result = await onApplyResourceImport(
-        mapping.mapped
-      );
-  
+        mapping.mapped,
+        progression
+      );  
       setImportMessage(
-        `${result.resources_imported} resources imported successfully.`
-      );
-  
+        `Game save imported successfully. ` +
+        `${result.resources_imported} resources and ` +
+        `${result.regions_imported} regions updated.`
+      );  
       setSave(null);
       setMapping(null);
       setExportString("");
@@ -235,13 +238,14 @@ export default function SaveImportPanel({
             disabled={
               importing ||
               !mapping ||
+              !progression ||
               mapping.mapped.length === 0
             }
             onClick={() => void handleApplyImport()}
           >
             {importing
               ? "Importing..."
-              : "Apply Resource Import"}
+              : "Apply Game Save Import"}
           </Button>
 
           </div>

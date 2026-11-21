@@ -8,7 +8,7 @@ import { useEffect, useState, useRef  } from 'react'
 import CorePanel from './components/CorePanel'
 import { applyPurchasePreview, type ApplyPurchases } from './utils/purchaseApi'
 import { type WriteGuard } from './utils/writeGuard'
-import { importPlayerResources, type ApplyResourceImport } from "@/lib/saveImport/importApi";
+import { importPlayerSnapshot, type ApplyResourceImport } from "@/lib/saveImport/importApi";
 import SaveImportPanel from "@/components/SaveImportPanel";
 
 export default function App() {
@@ -92,23 +92,29 @@ export default function App() {
   }
   
   const applyResourceImport: ApplyResourceImport =
-  async (resources) => {
-
-    if (!writeGuard.begin()) {
-      throw new Error("Another save is in progress.");
-    }
-
-    try {
-      const result = await importPlayerResources(resources);
-
-      setResourceRevision(previous => previous + 1);
-
-      return result;
-    } finally {
-      writeGuard.end();
-    }
-  };
-
+    async (resources, progression) => {
+      if (!writeGuard.begin()) {
+        throw new Error("Another save is in progress.");
+      }
+  
+      try {
+        const result = await importPlayerSnapshot(
+          resources,
+          progression
+        );
+  
+        setHighestSector(result.highest_sector);
+        setRegion(result.region_id);
+        setSaveMessage("");
+  
+        setResourceRevision(previous => previous + 1);
+  
+        return result;
+      } finally {
+        writeGuard.end();
+      }
+    };
+  
     useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user)

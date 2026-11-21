@@ -24,9 +24,10 @@ export default function ProgressionImportPreview({
 
         <div>
           <p className="text-muted-foreground">Current sector</p>
-          <p className="font-semibold">
+            <p className="font-semibold">
             {progression.currentSector}
-          </p>
+            {progression.currentSectorVariant}
+            </p>
           <p className="font-mono text-xs text-muted-foreground">
             {progression.currentSectorId}
           </p>

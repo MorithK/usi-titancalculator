@@ -7,6 +7,9 @@ import { extractResources } from "@/lib/saveImport/extractors/resources";
 import { mapResources, type ResourceMappingResult } from "@/lib/saveImport/resourceMapping";
 import ResourceImportPreview from "@/components/saveImport/ResourceImportPreview";
 import type { ApplyResourceImport } from "@/lib/saveImport/importApi";
+import { extractProgression, type ImportedProgression } from "@/lib/saveImport/extractors/progression";
+import ProgressionImportPreview from "@/components/saveImport/ProgressionImportPreview";
+
 
 export default function SaveImportPanel({
   onApplyResourceImport
@@ -20,6 +23,7 @@ export default function SaveImportPanel({
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [exportString, setExportString] = useState("");
+  const [progression, setProgression] = useState<ImportedProgression | null>(null);
 
   async function handleImport() {
     if (!exportString.trim()) {
@@ -35,9 +39,11 @@ export default function SaveImportPanel({
 
     try {
       const decoded = await decodeUSISave(exportString);
+      const extractedProgression = extractProgression(decoded);
       const extractedResources = extractResources(decoded);
       const mapping = await mapResources(extractedResources);
-   
+      
+      setProgression(extractedProgression);  
       setMapping(mapping);
       setSave(decoded);
 
@@ -61,6 +67,7 @@ export default function SaveImportPanel({
     setImporting(true);
     setError(null);
     setImportMessage(null);
+    setProgression(null);
   
     try {
       const result = await onApplyResourceImport(
@@ -74,7 +81,8 @@ export default function SaveImportPanel({
       setSave(null);
       setMapping(null);
       setExportString("");
-  
+      setProgression(null);
+
     } catch (err) {
       setError(
         err instanceof Error
@@ -111,8 +119,12 @@ export default function SaveImportPanel({
           value={exportString}
           onChange={(event) => {
             setExportString(event.target.value);
+            setSave(null);
+            setMapping(null);
+            setProgression(null);
             setError(null);
-          }}
+            setImportMessage(null);
+          }}          
           placeholder="Paste your exported save string here (H4sIA...)"
           rows={5}
           spellCheck={false}
@@ -132,6 +144,7 @@ export default function SaveImportPanel({
             setExportString("");
             setSave(null);
             setMapping(null);
+            setProgression(null);
             setError(null);
             setImportMessage(null);
           }}
@@ -193,6 +206,10 @@ export default function SaveImportPanel({
                 : "Unknown"}
             </span>
           </div>
+
+          {progression && (
+            <ProgressionImportPreview progression={progression} />
+          )}
           
           {mapping && (
             <ResourceImportPreview mapping={mapping} />
@@ -206,6 +223,7 @@ export default function SaveImportPanel({
             onClick={() => {
               setSave(null);
               setMapping(null);
+              setProgression(null);
               setError(null);
               setImportMessage(null);
             }}

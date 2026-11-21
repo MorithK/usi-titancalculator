@@ -1,0 +1,231 @@
+Log Started 2026-03-08 
+18:47:43: Sector 2 + 18:47:43
+18:58:55: Sector 3 + 0:11:12
+19:43:34: Sector 4 + 0:44:39
+20:19:30: Sector 5 + 0:35:56
+21:03:23: Sector 6 + 0:43:53
+22:18:03: Sector 7 + 1:14:40
+22:25:08: Sector 8 + 0:07:05
+22:52:43: Sector 9 + 0:27:35
+1 Days 6:57:09: Sector 10 + 8:04:26
+1 Days 7:04:17: Sector 11 + 0:07:08
+1 Days 9:06:36: Sector 12 + 2:02:19
+1 Days 10:12:33: Sector 13 + 1:05:57
+1 Days 12:44:54: Sector 14 + 2:32:21
+1 Days 17:34:14: Sector 15 + 4:49:20
+1 Days 19:52:13: Sector 16 + 2:17:59
+2 Days 6:47:30: Sector 17 + 10:55:17
+2 Days 8:16:36: Sector 18 + 1:29:06
+2 Days 22:14:09: Sector 19 + 13:57:33
+3 Days 14:43:24: Sector 20 + 16:29:15
+7 Days 14:54:26: Sector 21 + 4 Days 0:11:02
+8 Days 20:41:16: Sector 22 + 1 Days 5:46:50
+9 Days 17:38:19: Sector 23 + 20:57:03
+9 Days 22:04:21: Sector 24 + 4:26:02
+10 Days 7:32:50: Sector 25 + 9:28:29
+11 Days 6:48:47: Sector 26 + 23:15:57
+12 Days 12:21:45: Sector 27 + 1 Days 5:32:58
+14 Days 9:08:43: Sector 28 + 1 Days 20:46:58
+16 Days 20:31:55: Sector 29 + 2 Days 11:23:12
+17 Days 22:22:31: Sector 30 + 1 Days 1:50:36
+18 Days 19:27:10: Sector 31 + 21:04:39
+19 Days 14:45:41: Sector 32 + 19:18:31
+19 Days 16:18:03: Sector 33 + 1:32:22
+20 Days 23:31:03: Sector 34 + 1 Days 7:13:00
+21 Days 14:44:24: Sector 35 + 15:13:21
+22 Days 19:46:04: Sector 36 + 1 Days 5:01:40
+23 Days 15:24:28: Sector 37 + 19:38:24
+24 Days 6:46:23: Sector 38 + 15:21:55
+24 Days 20:50:42: Sector 39 + 14:04:19
+25 Days 12:55:51: Sector 40 + 16:05:09
+26 Days 16:18:58: Sector 41 + 1 Days 3:23:07
+29 Days 5:58:37: Sector 42 + 2 Days 13:39:39
+29 Days 14:57:42: Sector 43 + 8:59:05
+30 Days 5:13:01: Sector 44 + 14:15:19
+30 Days 14:34:40: Sector 45 + 9:21:39
+30 Days 21:26:42: Sector 46 + 6:52:02
+31 Days 20:14:13: Sector 47 + 22:47:31
+32 Days 11:27:29: Sector 48 + 15:13:16
+32 Days 20:56:58: Sector 49 + 9:29:29
+34 Days 9:11:21: Sector 50 + 1 Days 12:14:23
+34 Days 9:12:41: Sector 51 + 0:01:20
+35 Days 11:37:29: Sector 52 + 1 Days 2:24:48
+37 Days 5:16:46: Sector 53 + 1 Days 17:39:17
+38 Days 8:58:26: Sector 54 + 1 Days 3:41:40
+39 Days 4:17:40: Sector 55 + 19:19:14
+40 Days 10:35:49: Sector 56 + 1 Days 6:18:09
+41 Days 9:24:11: Sector 57 + 22:48:22
+43 Days 13:03:27: Sector 58 + 2 Days 3:39:16
+44 Days 8:11:41: Sector 59 + 19:08:14
+45 Days 4:55:45: Sector 60 + 20:44:04
+45 Days 11:39:35: Sector 61 + 6:43:50
+46 Days 6:15:47: Sector 62 + 18:36:12
+46 Days 18:16:49: Sector 63 + 12:01:02
+48 Days 12:12:58: Sector 64 + 1 Days 17:56:09
+49 Days 14:06:33: Sector 65 + 1 Days 1:53:35
+50 Days 7:12:02: Sector 66 + 17:05:29
+51 Days 7:22:52: Sector 67 + 1 Days 0:10:50
+52 Days 4:43:14: Sector 68 + 21:20:22
+52 Days 6:30:08: Sector 69 + 1:46:54
+52 Days 10:29:14: Sector 70 + 3:59:06
+52 Days 14:04:54: Sector 71 + 3:35:40
+52 Days 18:07:24: Sector 72 + 4:02:30
+53 Days 21:29:39: Sector 73 + 1 Days 3:22:15
+54 Days 8:17:40: Sector 74 + 10:48:01
+54 Days 11:08:54: Sector 75 + 2:51:14
+56 Days 1:16:58: Sector 76 + 1 Days 14:08:04
+57 Days 11:02:21: Sector 77 + 1 Days 9:45:23
+57 Days 17:09:01: Sector 78 + 6:06:40
+59 Days 9:08:18: Sector 79 + 1 Days 15:59:17
+59 Days 17:08:19: Sector 80 + 8:00:01
+59 Days 17:20:17: Reinforce 1 + 0:11:58
+62 Days 19:37:58: Sector 81 + 3 Days 2:17:41
+63 Days 8:00:12: Sector 82 + 12:22:14
+63 Days 19:44:03: Sector 83 + 11:43:51
+64 Days 4:15:11: Sector 84 + 8:31:08
+65 Days 11:19:32: Sector 85 + 1 Days 7:04:21
+67 Days 4:54:11: Sector 86 + 1 Days 17:34:39
+68 Days 4:34:31: Sector 87 + 23:40:20
+68 Days 18:19:54: Sector 88 + 13:45:23
+69 Days 6:57:16: Sector 89 + 12:37:22
+70 Days 4:34:17: Sector 90 + 21:37:01
+70 Days 5:22:48: Reinforce 2 + 0:48:31
+73 Days 11:39:04: Sector 91 + 3 Days 6:16:16
+73 Days 18:01:41: Sector 92 + 6:22:37
+75 Days 7:05:20: Sector 93 + 1 Days 13:03:39
+76 Days 13:30:45: Sector 94 + 1 Days 6:25:25
+77 Days 6:39:40: Sector 95 + 17:08:55
+77 Days 16:10:19: Sector 96 + 9:30:39
+78 Days 19:32:04: Sector 97 + 1 Days 3:21:45
+79 Days 5:08:25: Sector 98 + 9:36:21
+79 Days 22:19:10: Sector 99 + 17:10:45
+80 Days 23:59:57: Sector 100 + 1 Days 1:40:47
+81 Days 0:20:38: Reinforce 3 + 0:20:41
+81 Days 22:43:29: UNND-GLX-z121-1 Cleared + 22:22:51
+84 Days 5:28:50: Sector 101 + 2 Days 6:45:21
+85 Days 3:06:35: UNND-GLX-z113-2 Cleared + 21:37:45
+85 Days 4:12:25: Sector 102 + 1:05:50
+85 Days 12:38:01: Sector 103 + 8:25:36
+86 Days 3:37:27: Sector 104 + 14:59:26
+87 Days 22:48:20: Sector 105 + 1 Days 19:10:53
+88 Days 23:54:17: Sector 106 + 1 Days 1:05:57
+90 Days 8:01:44: Sector 107 + 1 Days 8:07:27
+91 Days 4:00:43: UNND-GLX-z107-3 Cleared + 19:58:59
+92 Days 13:46:22: Sector 108 + 1 Days 9:45:39
+92 Days 18:03:40: Reinforce 4 + 4:17:18
+95 Days 10:28:38: Sector 109 + 2 Days 16:24:58
+95 Days 14:46:52: Sector 110 + 4:18:14
+96 Days 8:52:54: Sector 111 + 18:06:02
+97 Days 18:46:18: UNND-GLX-z95-4 Cleared + 1 Days 9:53:24
+98 Days 0:38:11: Sector 112 + 5:51:53
+98 Days 17:57:01: Sector 113 + 17:18:50
+99 Days 14:36:36: Sector 114 + 20:39:35
+100 Days 12:41:47: Sector 115 + 22:05:11
+100 Days 22:18:46: Sector 116 + 9:36:59
+101 Days 9:10:49: Reinforce 5 + 10:52:03
+106 Days 11:14:30: Sector 117 + 5 Days 2:03:41
+107 Days 18:12:49: Sector 118 + 1 Days 6:58:19
+107 Days 20:50:52: Sector 119 + 2:38:03
+108 Days 8:49:07: Sector 120 + 11:58:15
+108 Days 21:44:50: Sector 121 + 12:55:43
+109 Days 22:15:32: UNND-GLX-z89-5 Cleared + 1 Days 0:30:42
+110 Days 8:40:35: Sector 122 + 10:25:03
+111 Days 13:34:18: Sector 123 + 1 Days 4:53:43
+112 Days 14:59:02: Sector 124 + 1 Days 1:24:44
+112 Days 15:05:21: Reinforce 6 + 0:06:19
+116 Days 22:07:04: Sector 125 + 4 Days 7:01:43
+118 Days 11:30:33: Sector 126 + 1 Days 13:23:29
+119 Days 12:43:06: Sector 127 + 1 Days 1:12:33
+122 Days 13:50:21: Sector 128 + 3 Days 1:07:15
+123 Days 15:54:30: UNND-GLX-z69-6 Cleared + 1 Days 2:04:09
+124 Days 8:53:46: Sector 129 + 16:59:16
+124 Days 21:39:12: Sector 130 + 12:45:26
+125 Days 8:05:34: Sector 131 + 10:26:22
+125 Days 8:12:03: Reinforce 7 + 0:06:29
+129 Days 11:38:15: Sector 132 + 4 Days 3:26:12
+129 Days 14:16:30: Sector 133 + 2:38:15
+130 Days 7:41:02: UNND-GLX-z60-7 Cleared + 17:24:32
+130 Days 14:13:08: Sector 134 + 6:32:06
+131 Days 7:22:21: Sector 135 + 17:09:13
+131 Days 20:54:42: Sector 136 + 13:32:21
+133 Days 9:35:08: Sector 137 + 1 Days 12:40:26
+136 Days 5:18:57: Sector 138 + 2 Days 19:43:49
+136 Days 19:05:07: UNND-GLX-z52-8 Cleared + 13:46:10
+138 Days 18:58:20: Sector 139 + 1 Days 23:53:13
+140 Days 12:23:49: Sector 140 + 1 Days 17:25:29
+142 Days 1:23:06: Reinforce 8 + 1 Days 12:59:17
+143 Days 14:27:23: Sector 141 + 1 Days 13:04:17
+145 Days 13:37:20: UNND-GLX-z46-9 Cleared + 1 Days 23:09:57
+145 Days 20:10:04: Sector 142 + 6:32:44
+147 Days 9:32:56: Sector 143 + 1 Days 13:22:52
+149 Days 17:32:33: Sector 144 + 2 Days 7:59:37
+151 Days 21:10:36: Sector 145 + 2 Days 3:38:03
+153 Days 8:38:15: Sector 146 + 1 Days 11:27:39
+153 Days 20:01:11: UNND-GLX-z40-0 Cleared + 11:22:56
+153 Days 22:20:01: Reinforce 9 + 2:18:50
+157 Days 5:16:45: Sector 147 + 3 Days 6:56:44
+158 Days 17:45:12: Sector 148 + 1 Days 12:28:27
+159 Days 22:05:09: Sector 149 + 1 Days 4:19:57
+161 Days 4:57:36: Reinforce 10 + 1 Days 6:52:27
+164 Days 5:43:48: Sector 150 + 3 Days 0:46:12
+164 Days 7:42:55: Sector 151 + 1:59:07
+164 Days 10:59:47: Sector 152 + 3:16:52
+165 Days 4:36:15: Sector 153 + 17:36:28
+166 Days 0:58:13: Sector 154 + 20:21:58
+166 Days 1:04:53: Sector 151 - Antumbra + 0:06:40
+166 Days 1:06:16: Sector 152 - Antumbra + 0:01:23
+166 Days 1:34:40: Sector 153 - Antumbra + 0:28:24
+166 Days 2:54:19: Sector 151 - Penumbra + 1:19:39
+166 Days 2:55:36: Sector 152 - Penumbra + 0:01:17
+166 Days 3:09:05: Sector 153 - Penumbra + 0:13:29
+167 Days 1:21:36: Sector 154 - Antumbra + 22:12:31
+167 Days 1:51:32: Sector 155 + 0:29:56
+167 Days 10:56:01: Sector 154 - Penumbra + 9:04:29
+169 Days 9:03:37: Sector 156 + 1 Days 22:07:36
+169 Days 21:22:27: Sector 155 - Penumbra + 12:18:50
+169 Days 21:25:58: Sector 155 - Antumbra + 0:03:31
+172 Days 2:59:55: Sector 157 + 2 Days 5:33:57
+172 Days 19:05:24: Sector 156 - Penumbra + 16:05:29
+172 Days 22:04:32: Sector 156 - Antumbra + 2:59:08
+174 Days 9:40:52: Sector 158 + 1 Days 11:36:20
+175 Days 12:27:04: Sector 157 - Penumbra + 1 Days 2:46:12
+175 Days 19:13:08: Sector 157 - Antumbra + 6:46:04
+176 Days 8:05:09: Sector 159 + 12:52:01
+176 Days 17:16:59: Sector 158 - Antumbra + 9:11:50
+176 Days 17:24:48: Sector 158 - Penumbra + 0:07:49
+177 Days 8:17:06: Sector 160 + 14:52:18
+177 Days 11:54:38: Sector 159 - Penumbra + 3:37:32
+177 Days 14:08:59: UNND-GLX-z32-11 Cleared + 2:14:21
+177 Days 14:47:19: Sector 159 - Antumbra + 0:38:20
+180 Days 10:29:41: Sector 161 + 2 Days 19:42:22
+180 Days 10:51:23: Sector 160 - Penumbra + 0:21:42
+180 Days 13:37:07: Sector 160 - Antumbra + 2:45:44
+182 Days 20:43:07: Sector 162 + 2 Days 7:06:00
+183 Days 18:50:53: Sector 161 - Penumbra + 22:07:46
+183 Days 20:54:31: Sector 161 - Antumbra + 2:03:38
+188 Days 20:51:40: Sector 163 + 4 Days 23:57:09
+189 Days 20:20:30: Sector 162 - Antumbra + 23:28:50
+189 Days 22:28:19: Sector 162 - Penumbra + 2:07:49
+190 Days 1:46:54: Sector 164 + 3:18:35
+192 Days 21:21:35: Sector 163 - Antumbra + 2 Days 19:34:41
+193 Days 4:41:28: Sector 163 - Penumbra + 7:19:53
+194 Days 3:24:09: Sector 165 + 22:42:41
+199 Days 23:51:44: Sector 164 - Penumbra + 5 Days 20:27:35
+200 Days 1:26:07: Sector 164 - Antumbra + 1:34:23
+207 Days 18:29:08: Sector 166 + 7 Days 17:03:01
+217 Days 17:14:21: Sector 165 - Antumbra + 9 Days 22:45:13
+218 Days 18:55:07: Sector 165 - Penumbra + 1 Days 1:40:46
+233 Days 3:51:42: Sector 167 + 14 Days 8:56:35
+257 Days 3:49:01: Sector 166 - Penumbra + 23 Days 23:57:19
+259 Days 1:08:53: Sector 166 - Antumbra + 1 Days 21:19:52
+277 Days 5:47:00: Reintegration 4 + 18 Days 4:38:07
+282 Days 16:43:31: Sector 168 + 5 Days 10:56:31
+284 Days 3:14:09: UNND-GLX-z28-12 Cleared + 1 Days 10:30:38
+285 Days 1:07:00: Sector 169 + 21:52:51
+287 Days 0:51:30: Sector 167 - Antumbra + 1 Days 23:44:30
+287 Days 4:47:08: Sector 167 - Penumbra + 3:55:38
+288 Days 1:58:16: Sector 170 + 21:11:08
+291 Days 11:50:25: Sector 168 - Penumbra + 3 Days 9:52:09
+291 Days 11:55:47: Sector 168 - Antumbra + 0:05:22
+291 Days 12:37:15: Sector 171 + 0:41:28
+292 Days 6:24:12: Reintegration 5 + 17:46:57

@@ -144,7 +144,7 @@ export function extractProgression(
     currentRegionId: layer + 1,
     currentRegionName: REGION_NAMES[layer],
     currentSector,
-    currentSectorId: battle.sector_id_load,
+    currentSectorId: sectorId,
     currentSectorVariant,
     nextUmbraSector: readInteger(
       veil.umbra_sector_number,

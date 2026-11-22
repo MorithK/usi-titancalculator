@@ -74,8 +74,7 @@ export default function ProgressionImportPreview({
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Preview only. Progression is not written to the
-        database by the current import operation.
+            Review the progression values before importing. Applying the game save will update both resources and regional progression.
       </p>
     </section>
   );

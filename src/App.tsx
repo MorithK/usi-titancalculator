@@ -20,15 +20,14 @@ export default function App() {
   const [error, setError] = useState('')
   const [highestSector, setHighestSector] = useState(150)
   const [region, setRegion] = useState(1)
+  const [savedRegion, setSavedRegion] = useState(1)
+  
   const [saveMessage, setSaveMessage] = useState('')
   const [resourceRevision, setResourceRevision] = useState(0)
   const [progressionRevision, setProgressionRevision] = useState(0)
+  
   const writeLock = useRef(false)
   const [writing, setWriting] = useState(false)
-  const [progression, setProgression] = useState<PlayerProgression | null>(null)
-  const [progressionLoading, setProgressionLoading] = useState(true)
-  const [progressionError, setProgressionError] = useState<string | null>(null)
-  const [savedRegion, setSavedRegion] = useState(1);
 
   const writeGuard: WriteGuard = {
     begin: () => {
@@ -112,7 +111,7 @@ export default function App() {
   
         setHighestSector(result.highest_sector);
         setRegion(result.region_id);
-        setSavedRegion(data.region_id);
+        setSavedRegion(result.region_id);
         setSaveMessage("");
   
         setResourceRevision(previous => previous + 1);
@@ -140,61 +139,6 @@ export default function App() {
   }, [])
 
   const userId = user?.id
-  useEffect(() => {
-    if (!userId) {
-      return;
-    }
-  
-    let cancelled = false;
-  
-    async function loadProgression() {
-      setProgressionLoading(true);
-      setProgressionError(null);
-  
-      const [regionsResult, veilResult] = await Promise.all([
-        supabase
-          .from("player_region_progression")
-          .select(
-            "region_id, historical_highest, current_run_highest, cleared_sector_ids"
-          )
-          .eq("user_id", userId),
-  
-        supabase
-          .from("player_veil_state")
-          .select(
-            "current_region_id, current_sector, current_sector_id, next_umbra_sector"
-          )
-          .eq("user_id", userId)
-          .maybeSingle(),
-      ]);
-  
-      if (cancelled) return;
-  
-      if (regionsResult.error || veilResult.error) {
-        setProgressionError(
-          regionsResult.error?.message ??
-          veilResult.error?.message ??
-          "Unable to load player progression."
-        );
-        setProgressionLoading(false);
-        return;
-      }
-  
-      setProgression({
-        regions: regionsResult.data ?? [],
-        veil: veilResult.data ?? null,
-      });
-  
-      setProgressionLoading(false);
-    }
-  
-    void loadProgression();
-  
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, progressionRevision]);
-  
 
   useEffect(() => {
     if (!userId) return
@@ -217,6 +161,7 @@ export default function App() {
         if (data) {
           setHighestSector(data.highest_sector)
           setRegion(data.region_id)
+          setSavedRegion(data.region_id)
         }
       })
 

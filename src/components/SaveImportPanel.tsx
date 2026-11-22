@@ -9,7 +9,7 @@ import ResourceImportPreview from "@/components/saveImport/ResourceImportPreview
 import type { ApplyResourceImport } from "@/lib/saveImport/importApi";
 import { extractProgression, type ImportedProgression } from "@/lib/saveImport/extractors/progression";
 import ProgressionImportPreview from "@/components/saveImport/ProgressionImportPreview";
-
+import { extractTitanComponents, type ImportedTitanComponent } from "@/lib/saveImport/extractors/titanComponents";
 
 export default function SaveImportPanel({
   onApplyResourceImport
@@ -24,6 +24,7 @@ export default function SaveImportPanel({
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [exportString, setExportString] = useState("");
   const [progression, setProgression] = useState<ImportedProgression | null>(null);
+  const [titanComponents, setTitanComponents] = useState<ImportedTitanComponent[]>([]);
 
   async function handleImport() {
     if (!exportString.trim()) {
@@ -42,10 +43,13 @@ export default function SaveImportPanel({
       const extractedProgression = extractProgression(decoded);
       const extractedResources = extractResources(decoded);
       const mapping = await mapResources(extractedResources);
-      
+      const extractedTitanComponents = extractTitanComponents(decoded);
+
       setProgression(extractedProgression);  
       setMapping(mapping);
       setSave(decoded);
+      setTitanComponents(extractedTitanComponents);
+
 
     } catch (err) {
       setError(
@@ -63,7 +67,8 @@ export default function SaveImportPanel({
     if (
       !mapping ||
       mapping.mapped.length === 0 ||
-      !progression
+      !progression ||
+      titanComponents.length !== 7
     ) {
       return;
     }  
@@ -74,17 +79,20 @@ export default function SaveImportPanel({
     try {
       const result = await onApplyResourceImport(
         mapping.mapped,
-        progression
+        progression,
+        titanComponents
       );  
       setImportMessage(
         `Game save imported successfully. ` +
         `${result.resources_imported} resources and ` +
-        `${result.regions_imported} regions updated.`
+        `${result.regions_imported} regions updated and` +
+        `${result.titan_components_imported} Titan components updated.`
       );  
       setSave(null);
       setMapping(null);
       setExportString("");
       setProgression(null);
+      setTitanComponents([]);
 
     } catch (err) {
       setError(
@@ -125,6 +133,7 @@ export default function SaveImportPanel({
             setSave(null);
             setMapping(null);
             setProgression(null);
+            setTitanComponents([]);
             setError(null);
             setImportMessage(null);
           }}          
@@ -148,6 +157,7 @@ export default function SaveImportPanel({
             setSave(null);
             setMapping(null);
             setProgression(null);
+            setTitanComponents([]);
             setError(null);
             setImportMessage(null);
           }}
@@ -213,6 +223,48 @@ export default function SaveImportPanel({
           {progression && (
             <ProgressionImportPreview progression={progression} />
           )}
+
+          {save && titanComponents.length > 0 && (
+            <section className="rounded-lg border p-4">
+              <h3 className="mb-3 font-semibold">
+                Titan Components Preview
+              </h3>
+
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-slate-400">
+                    <th className="p-2 text-left">Slot</th>
+                    <th className="p-2 text-left">Component</th>
+                    <th className="p-2 text-right">Level</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {titanComponents.map(component => (
+                    <tr
+                      key={component.slotNumber}
+                      className="border-b border-slate-800"
+                    >
+                      <td className="p-2">
+                        {component.slotNumber}
+                      </td>
+                      <td className="p-2">
+                        {component.name}
+                      </td>
+                      <td className="p-2 text-right">
+                        {component.level}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <p className="mt-3 text-xs text-slate-400">
+                Preview only. Titan component levels are not yet
+                included in the database import.
+              </p>
+            </section>
+          )}
           
           {mapping && (
             <ResourceImportPreview mapping={mapping} />
@@ -227,6 +279,7 @@ export default function SaveImportPanel({
               setSave(null);
               setMapping(null);
               setProgression(null);
+              setTitanComponents([]);
               setError(null);
               setImportMessage(null);
             }}
@@ -239,7 +292,8 @@ export default function SaveImportPanel({
               importing ||
               !mapping ||
               !progression ||
-              mapping.mapped.length === 0
+              mapping.mapped.length === 0 ||
+              titanComponents.length !== 7
             }
             onClick={() => void handleApplyImport()}
           >

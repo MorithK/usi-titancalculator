@@ -98,7 +98,7 @@ export default function App() {
   }
   
   const applyResourceImport: ApplyResourceImport =
-    async (resources, progression) => {
+    async (resources, progression, titanComponents) => {
       if (!writeGuard.begin()) {
         throw new Error("Another save is in progress.");
       }
@@ -106,9 +106,10 @@ export default function App() {
       try {
         const result = await importPlayerSnapshot(
           resources,
-          progression
+          progression,
+          titanComponents
         );
-  
+          
         setHighestSector(result.highest_sector);
         setRegion(result.region_id);
         setSavedRegion(result.region_id);

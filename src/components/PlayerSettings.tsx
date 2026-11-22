@@ -15,7 +15,7 @@ export default function PlayerSettings({
   return (
     <section className="rounded-xl border border-slate-800 bg-[#111827] p-4">
       <div className="flex flex-wrap items-end gap-4">
-        <div className="min-w-[220px] flex-1 sm:flex-none">
+        <div className="min-w-55 flex-1 sm:flex-none">
           <label
             htmlFor="farming-region"
             className="mb-2 block text-sm font-medium text-slate-200"

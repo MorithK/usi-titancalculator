@@ -3,6 +3,7 @@ import { supabase } from "@/utils/supabase";
 import type { MappedResource } from "./resourceMapping";
 import type { ImportedProgression } from "./extractors/progression";
 import type { ImportedTitanComponent } from "./extractors/titanComponents";
+import type { ImportedWarps } from "./extractors/warps";
 
 export interface SnapshotImportResult {
   success: boolean;
@@ -12,18 +13,22 @@ export interface SnapshotImportResult {
   highest_sector: number;
   region_id: number;
   imported_at: string;
+  warps_imported: number;
+  warp_nodes_imported: number;
 }
 
 export type ApplyResourceImport = (
   resources: MappedResource[],
   progression: ImportedProgression,
-  titanComponents: ImportedTitanComponent[]
+  titanComponents: ImportedTitanComponent[],
+  warps: ImportedWarps
 ) => Promise<SnapshotImportResult>;
 
 export async function importPlayerSnapshot(
   resources: MappedResource[],
   progression: ImportedProgression,
-  titanComponents: ImportedTitanComponent[]
+  titanComponents: ImportedTitanComponent[],
+  warps: ImportedWarps
 ): Promise<SnapshotImportResult> {
   if (resources.length === 0) {
     throw new Error("No mapped resources to import.");
@@ -58,6 +63,7 @@ export async function importPlayerSnapshot(
     {
       p_resources: payload,
       p_progression: progressionPayload,
+      p_warps: warps,
       p_titan_components: titanComponents.map(item => ({
         slotNumber: item.slotNumber,
         coreUpgradeId: item.coreUpgradeId,
@@ -73,7 +79,9 @@ export async function importPlayerSnapshot(
   if (
     !data?.success ||
     data.regions_imported !== 4 ||
-    data.titan_components_imported !== 7
+    data.titan_components_imported !== 7 ||
+    data.warps_imported !== 3 ||
+    data.warp_nodes_imported !== 74
   ) {
     throw new Error("Game save import failed.");
   }

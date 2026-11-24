@@ -10,6 +10,7 @@ import type { ApplyResourceImport } from "@/lib/saveImport/importApi";
 import { extractProgression, type ImportedProgression } from "@/lib/saveImport/extractors/progression";
 import ProgressionImportPreview from "@/components/saveImport/ProgressionImportPreview";
 import { extractTitanComponents, type ImportedTitanComponent } from "@/lib/saveImport/extractors/titanComponents";
+import { extractWarps, type ImportedWarps} from "@/lib/saveImport/extractors/warps";
 
 export default function SaveImportPanel({
   onApplyResourceImport
@@ -25,6 +26,7 @@ export default function SaveImportPanel({
   const [exportString, setExportString] = useState("");
   const [progression, setProgression] = useState<ImportedProgression | null>(null);
   const [titanComponents, setTitanComponents] = useState<ImportedTitanComponent[]>([]);
+  const [warps, setWarps] = useState<ImportedWarps | null>(null);
 
   async function handleImport() {
     if (!exportString.trim()) {
@@ -44,12 +46,13 @@ export default function SaveImportPanel({
       const extractedResources = extractResources(decoded);
       const mapping = await mapResources(extractedResources);
       const extractedTitanComponents = extractTitanComponents(decoded);
-
+      const extractedWarps = extractWarps(decoded);
+      
       setProgression(extractedProgression);  
       setMapping(mapping);
       setSave(decoded);
       setTitanComponents(extractedTitanComponents);
-
+      setWarps(extractedWarps);
 
     } catch (err) {
       setError(
@@ -68,7 +71,8 @@ export default function SaveImportPanel({
       !mapping ||
       mapping.mapped.length === 0 ||
       !progression ||
-      titanComponents.length !== 7
+      titanComponents.length !== 7 ||
+      !warps
     ) {
       return;
     }  
@@ -80,19 +84,23 @@ export default function SaveImportPanel({
       const result = await onApplyResourceImport(
         mapping.mapped,
         progression,
-        titanComponents
+        titanComponents,
+        warps
       );  
       setImportMessage(
         `Game save imported successfully. ` +
         `${result.resources_imported} resources and ` +
         `${result.regions_imported} regions updated and` +
-        `${result.titan_components_imported} Titan components updated.`
+        `${result.titan_components_imported} Titan components updated and` +
+        `${result.warps_imported} Warps and ` +
+        `${result.warp_nodes_imported} Warp nodes updated.`
       );  
       setSave(null);
       setMapping(null);
       setExportString("");
       setProgression(null);
       setTitanComponents([]);
+      setWarps(null);
 
     } catch (err) {
       setError(
@@ -134,6 +142,7 @@ export default function SaveImportPanel({
             setMapping(null);
             setProgression(null);
             setTitanComponents([]);
+            setWarps(null);
             setError(null);
             setImportMessage(null);
           }}          
@@ -158,6 +167,7 @@ export default function SaveImportPanel({
             setMapping(null);
             setProgression(null);
             setTitanComponents([]);
+            setWarps(null);
             setError(null);
             setImportMessage(null);
           }}
@@ -260,12 +270,59 @@ export default function SaveImportPanel({
               </table>
 
               <p className="mt-3 text-xs text-slate-400">
-                Preview only. Titan component levels are not yet
-                included in the database import.
+                Review the component values before importing. Applying the game save will update Titan components.
               </p>
             </section>
           )}
           
+          {warps && (
+            <section className="rounded-lg border p-4">
+              <h3 className="mb-3 font-semibold">
+                Warp Import Preview
+              </h3>
+
+              <p className="mb-3 text-sm">
+                Tethered: {warps.tetheredWarpName}
+              </p>
+
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-slate-400">
+                    <th className="p-2 text-left">Warp</th>
+                    <th className="p-2 text-right">
+                      Max Jump
+                    </th>
+                    <th className="p-2 text-right">
+                      Current Skein
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {warps.warps.map(warp => (
+                    <tr
+                      key={warp.warpName}
+                      className="border-b border-slate-800"
+                    >
+                      <td className="p-2">{warp.warpName}</td>
+                      <td className="p-2 text-right">
+                        {warp.maxDifficulty}
+                      </td>
+                      <td className="p-2 text-right">
+                        {warp.currentSkein}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <p className="mt-3 text-xs text-slate-400">
+                {warps.nodes.length} Warp node records found.
+                Preview only; no changes saved yet.
+              </p>
+            </section>
+          )}
+
           {mapping && (
             <ResourceImportPreview mapping={mapping} />
           )}
@@ -280,8 +337,9 @@ export default function SaveImportPanel({
               setMapping(null);
               setProgression(null);
               setTitanComponents([]);
+              setWarps(null);
               setError(null);
-              setImportMessage(null);
+              setImportMessage(null);              
             }}
           >
             Cancel
@@ -293,7 +351,8 @@ export default function SaveImportPanel({
               !mapping ||
               !progression ||
               mapping.mapped.length === 0 ||
-              titanComponents.length !== 7
+              titanComponents.length !== 7 ||
+              !warps
             }
             onClick={() => void handleApplyImport()}
           >

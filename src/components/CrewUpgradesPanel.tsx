@@ -211,7 +211,7 @@ export default function CrewUpgradesPanel({
     return () => {
       cancelled = true
     }
-  }, [userId])
+  }, [userId, resourceRevision])
 
   async function saveUpgrade(
     definition: UpgradeDefinition,

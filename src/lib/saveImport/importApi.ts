@@ -4,6 +4,7 @@ import type { MappedResource } from "./resourceMapping";
 import type { ImportedProgression } from "./extractors/progression";
 import type { ImportedTitanComponent } from "./extractors/titanComponents";
 import type { ImportedWarps } from "./extractors/warps";
+import type { ImportedCrewUpgrade } from "./extractors/crewUpgrades";
 
 export interface SnapshotImportResult {
   success: boolean;
@@ -15,20 +16,23 @@ export interface SnapshotImportResult {
   imported_at: string;
   warps_imported: number;
   warp_nodes_imported: number;
+  crew_upgrades_imported: number;
 }
 
 export type ApplyResourceImport = (
   resources: MappedResource[],
   progression: ImportedProgression,
   titanComponents: ImportedTitanComponent[],
-  warps: ImportedWarps
+  warps: ImportedWarps,
+  crewUpgrades: ImportedCrewUpgrade[]
 ) => Promise<SnapshotImportResult>;
 
 export async function importPlayerSnapshot(
   resources: MappedResource[],
   progression: ImportedProgression,
   titanComponents: ImportedTitanComponent[],
-  warps: ImportedWarps
+  warps: ImportedWarps,
+  crewUpgrades: ImportedCrewUpgrade[]
 ): Promise<SnapshotImportResult> {
   if (resources.length === 0) {
     throw new Error("No mapped resources to import.");
@@ -69,6 +73,11 @@ export async function importPlayerSnapshot(
         coreUpgradeId: item.coreUpgradeId,
         level: item.level,
       })),
+      p_crew_upgrades: crewUpgrades.map(item => ({
+        crewUpgradeId: item.crewUpgradeId,
+        saveName: item.saveName,
+        level: item.level,
+      })),
     }
   );
 
@@ -78,12 +87,16 @@ export async function importPlayerSnapshot(
 
   if (
     !data?.success ||
-    data.regions_imported !== 4 ||
-    data.titan_components_imported !== 7 ||
-    data.warps_imported !== 3 ||
-    data.warp_nodes_imported !== 74
+    data.regions_imported !== progression.regions.length ||
+    data.titan_components_imported !== titanComponents.length ||
+    data.crew_upgrades_imported !== crewUpgrades.length ||
+    data.warps_imported !== warps.warps.length ||
+    data.warp_nodes_imported !== warps.nodes.length ||
+    data.resources_imported !== resources.length
   ) {
-    throw new Error("Game save import failed.");
+    throw new Error(
+      "Game save import returned incomplete results."
+    );
   }
 
   return data as SnapshotImportResult;

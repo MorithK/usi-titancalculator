@@ -11,6 +11,11 @@ import { extractProgression, type ImportedProgression } from "@/lib/saveImport/e
 import ProgressionImportPreview from "@/components/saveImport/ProgressionImportPreview";
 import { extractTitanComponents, type ImportedTitanComponent } from "@/lib/saveImport/extractors/titanComponents";
 import { extractWarps, type ImportedWarps} from "@/lib/saveImport/extractors/warps";
+import { requireTitanStage } from "@/lib/saveImport/stage";
+import { loadImportDefinitions, } from "@/lib/saveImport/importDefinitions";
+import { extractCrewUpgrades, type ImportedCrewUpgrade, } from "@/lib/saveImport/extractors/crewUpgrades";
+import { buildImportChanges, type ImportChange, } from "@/lib/saveImport/buildImportChanges";
+import SnapshotDiffPreview from "@/components/saveImport/SnapshotDiffPreview";
 
 export default function SaveImportPanel({
   onApplyResourceImport
@@ -27,6 +32,9 @@ export default function SaveImportPanel({
   const [progression, setProgression] = useState<ImportedProgression | null>(null);
   const [titanComponents, setTitanComponents] = useState<ImportedTitanComponent[]>([]);
   const [warps, setWarps] = useState<ImportedWarps | null>(null);
+  const [crewUpgrades, setCrewUpgrades] = useState<ImportedCrewUpgrade[]>([]);
+  const [changes, setChanges] = useState<ImportChange[]>([]);
+  const [playerLastUpdated, setPlayerLastUpdated] = useState<string | null>(null);
 
   async function handleImport() {
     if (!exportString.trim()) {
@@ -39,20 +47,43 @@ export default function SaveImportPanel({
     setError(null);
     setSave(null);
     setMapping(null);
+    setCrewUpgrades([]);
+    setChanges([]);
+    setPlayerLastUpdated(null);
 
     try {
+      
       const decoded = await decodeUSISave(exportString);
+      // Validate the game stage first.
+      requireTitanStage(decoded);
+      // Load the mappings and current player state.
+      const defs = await loadImportDefinitions();
+      // Extract progression and resources.
       const extractedProgression = extractProgression(decoded);
       const extractedResources = extractResources(decoded);
-      const mapping = await mapResources(extractedResources);
-      const extractedTitanComponents = extractTitanComponents(decoded);
-      const extractedWarps = extractWarps(decoded);
-      
-      setProgression(extractedProgression);  
-      setMapping(mapping);
+      const resourceMapping = await mapResources(extractedResources);
+      // Use reference definitions rather than hardcoded IDs.
+      const extractedTitanComponents = extractTitanComponents(decoded, defs.core);
+      const extractedWarps = extractWarps(decoded, defs.warps, defs.nodes);
+      const extractedCrewUpgrades = extractCrewUpgrades(decoded, defs.crew);
+      // Compare the game save against current database data.
+      const extractedChanges = buildImportChanges(
+        resourceMapping.mapped,
+        extractedTitanComponents,
+        extractedCrewUpgrades,
+        extractedWarps,
+        defs
+      );
+
+      // Only populate the preview after all validation succeeds.
+      setProgression(extractedProgression);
+      setMapping(resourceMapping);
       setSave(decoded);
       setTitanComponents(extractedTitanComponents);
       setWarps(extractedWarps);
+      setCrewUpgrades(extractedCrewUpgrades);
+      setChanges(extractedChanges);
+      setPlayerLastUpdated(defs.current.playerUpdatedAt);
 
     } catch (err) {
       setError(
@@ -72,10 +103,12 @@ export default function SaveImportPanel({
       mapping.mapped.length === 0 ||
       !progression ||
       titanComponents.length !== 7 ||
-      !warps
+      !warps ||
+      crewUpgrades.length === 0 ||
+      changes.length === 0
     ) {
       return;
-    }  
+    }
     setImporting(true);
     setError(null);
     setImportMessage(null);
@@ -85,22 +118,27 @@ export default function SaveImportPanel({
         mapping.mapped,
         progression,
         titanComponents,
-        warps
-      );  
+        warps,
+        crewUpgrades
+      );      
       setImportMessage(
         `Game save imported successfully. ` +
-        `${result.resources_imported} resources and ` +
-        `${result.regions_imported} regions updated and` +
-        `${result.titan_components_imported} Titan components updated and` +
+        `${result.resources_imported} resources, ` +
+        `${result.regions_imported} regions, ` +
+        `${result.titan_components_imported} Titan components, ` +
+        `${result.crew_upgrades_imported} Crew upgrades, ` +
         `${result.warps_imported} Warps and ` +
         `${result.warp_nodes_imported} Warp nodes updated.`
-      );  
+      );      
       setSave(null);
       setMapping(null);
       setExportString("");
       setProgression(null);
       setTitanComponents([]);
       setWarps(null);
+      setCrewUpgrades([]);
+      setChanges([]);
+      setPlayerLastUpdated(null);
 
     } catch (err) {
       setError(
@@ -145,6 +183,9 @@ export default function SaveImportPanel({
             setWarps(null);
             setError(null);
             setImportMessage(null);
+            setCrewUpgrades([]);
+            setChanges([]);
+            setPlayerLastUpdated(null);
           }}          
           placeholder="Paste your exported save string here (H4sIA...)"
           rows={5}
@@ -170,6 +211,9 @@ export default function SaveImportPanel({
             setWarps(null);
             setError(null);
             setImportMessage(null);
+            setCrewUpgrades([]);
+            setChanges([]);
+            setPlayerLastUpdated(null);
           }}
         >
           Clear
@@ -327,6 +371,14 @@ export default function SaveImportPanel({
             <ResourceImportPreview mapping={mapping} />
           )}
 
+          {save && changes.length > 0 && (
+            <SnapshotDiffPreview
+              changes={changes}
+              saveTimestamp={save.timestamp}
+              lastUpdated={playerLastUpdated}
+            />
+          )}
+
           <div className="flex items-center justify-end gap-2">
 
           <Button
@@ -339,7 +391,10 @@ export default function SaveImportPanel({
               setTitanComponents([]);
               setWarps(null);
               setError(null);
-              setImportMessage(null);              
+              setImportMessage(null);      
+              setCrewUpgrades([]);
+              setChanges([]);
+              setPlayerLastUpdated(null);          
             }}
           >
             Cancel

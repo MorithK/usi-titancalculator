@@ -98,7 +98,12 @@ export default function App() {
   }
   
   const applyResourceImport: ApplyResourceImport =
-    async (resources, progression, titanComponents, warps) => {
+    async (
+      resources, 
+      progression, 
+      titanComponents, 
+      warps, 
+      crewUpgrades) => {
       if (!writeGuard.begin()) {
         throw new Error("Another save is in progress.");
       }
@@ -108,7 +113,8 @@ export default function App() {
           resources,
           progression,
           titanComponents,
-          warps
+          warps,
+          crewUpgrades
         );
 
         setHighestSector(result.highest_sector);

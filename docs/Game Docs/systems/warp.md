@@ -74,9 +74,25 @@ Example: `S=156`, `G=43.39`, `R=1070s`, `C=37s`, `D=1849s`: four award cycles, `
 
 **Changing upgrades matter:** some Warp, Research, Reactor and other bonuses change effective charge, discharge or Skein rates. The present estimate assumes the effective rates remain constant over the planned interval; it is **not** a dynamic purchase simulation.
 
+## 4A. Wiki-verified Titan-era tether mechanics and baseline data
+
+The [wiki's Tether Warp Locations section](https://spaceidle.game-vault.net/wiki/Warp_Drive) states that **Skein is awarded when a tethered Warp fully charges**, while **Residuum is awarded when its discharge completes**. The tethered location must first be cleared. Cleared Warp difficulties persist across reinforce. The wiki further states that each cleared difficulty above a location's starting difficulty multiplies Skein gain by **×1.35**, but does **not** increase Residuum gain.
+
+| Warp | Wiki unlock condition | Starting difficulty | Base charge time | Base discharge time | Base Residuum per discharge |
+|---|---|---:|---:|---:|---:|
+| Senectus | Clear sector 150 | 151 | 1e11 seconds | 17,000 seconds | 20,000 |
+| Tiberinus | Clear sector 156 | 157 | 1e12 seconds | 30,000 seconds | 40,000 |
+| Ullr | Clear sector 163 | 164 | 3e12 seconds | 90,000 seconds | 140,000 |
+
+These are **unmodified wiki baselines**, not current player rates. The spreadsheet's significantly shorter charge/discharge durations already reflect game progression and modifiers. Its displayed 'Sector Unlock' label may differ from the wiki's *clear condition* and *starting difficulty*; keep these concepts distinct.
+
+The wiki states that **Warp Core Charge Speed** determines charge duration, while **Warp Discharge Speed** determines discharge duration. Exact speed-to-seconds calculations still need testing for Titan-phase effective stats.
+
 ## 5. Residium upgrades
 
-The spreadsheet places the Residium upgrade table at the left of the WarpCalculator tab (starting around row 9). Each upgrade has next-level cost/time and remaining-level cost/time.
+The spreadsheet places the Residium upgrade table at the left of the WarpCalculator tab (starting around row 9).
+
+**Wiki mechanic:** Residuum upgrade rows contain five levels per node, with subsequent level cost multiplying by **×1.25**. The basic published row starting costs are **10, 30, 90, and 270** Residuum, depending on row. These are candidate *base* costs; confirm the player's applicable progression and rounding before calculating actual purchases. Upgrades above the wiki's separator line persist on reinforce. See the wiki [Tether Warp Upgrades / Residuum](https://spaceidle.game-vault.net/wiki/Warp_Drive) section. Each upgrade has next-level cost/time and remaining-level cost/time.
 
 Its **Row Completion** summaries aggregate a group of Residium upgrades, deducting the current balance only once. The summary requires its own aggregate formula and should **not** be implemented by adding each row's already-discounted “remaining” value.
 

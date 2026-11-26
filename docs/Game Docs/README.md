@@ -32,7 +32,7 @@
 2. **Decoded player save**: authoritative for player levels, ownership, loadout, and resource balances; not automatically a source of calculated bonus formulas.
 3. **[Original calculator spreadsheet](https://docs.google.com/spreadsheets/d/1xdB9Xdr1SLnLHsQxNrbUPB6cQrC62kfweJQfW6lQxJ8/edit)**: tested behavior for planning, dependencies, timing estimates and display.
 4. **[Unnamed Space Idle Wiki](https://spaceidle.game-vault.net/wiki/Main_Page)**: published mechanics and candidate mathematical effects; content may describe another phase or version.
-5. **Google Apps Script bound to the spreadsheet**: the source for automatic Warp countdown/award behavior, **not yet retrievable through the available connector**. Do not mark timer transitions verified until the script is inspected.
+5. **Google Apps Script**: source available in project Library file `usi-apps-script.txt`; the Warp charge/discharge countdown and payout control flow has been inspected. The source reveals potential bugs, which are documented in [Warp](systems/warp.md). The React equivalent remains unimplemented.
 
 Where these disagree, **record the difference and game version** rather than silently replacing the user's snapshot.
 

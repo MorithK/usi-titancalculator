@@ -1,5 +1,8 @@
 # Synth System
 
+> **Documentation scope:** This page describes regular Synth mechanics. **Alien Synth** uses a separate inventory, recipe classification and speed calculation; see [Alien Synth](alien-synth.md). Fixtures likewise use [Fixture Creation Speed](fixtures.md), not regular Synth Speed. See also the [wiki Synth section](https://spaceidle.game-vault.net/wiki/Synth).
+
+
 **System:** Synth  
 **Implementation status:** Planned  
 **Documentation status:** In progress  

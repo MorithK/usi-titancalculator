@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ImportChange } from "@/lib/saveImport/buildImportChanges";
+import Decimal from "decimal.js";
 
 type Filter = "changed" | "all" | "decreases";
 const color: Record<ImportChange["status"], string> = {
@@ -9,6 +10,28 @@ const color: Record<ImportChange["status"], string> = {
   new: "text-cyan-400",
   unchanged: "text-slate-500",
 };
+
+function formatPreviewValue(
+  value: string | null,
+  category: string,
+  key: string
+): string {
+  if (value === null) return "Not saved";
+
+  const isSkein =
+    key.endsWith("Skein") ||
+    (category === "Warps" && key.startsWith("skein-"));
+
+  if (isSkein) {
+    return new Decimal(value).toFixed(2);
+  }
+
+  if (category === "Resources") {
+    return new Decimal(value).toExponential(2);
+  }
+
+  return value;
+}
 
 export default function SnapshotDiffPreview({
   changes, saveTimestamp, lastUpdated,
@@ -77,8 +100,20 @@ function FragmentGroup({category,rows}: {category: string; rows: ImportChange[]}
     <tr className="bg-slate-800/70"><th colSpan={4} className="p-2 text-left text-cyan-300">{category}</th></tr>
     {rows.map(change => <tr key={`${change.category}-${change.key}`} className="border-t border-slate-800">
       <td className="p-2">{change.label}</td>
-      <td className="max-w-44 break-all p-2 text-right font-mono text-slate-400">{change.previous ?? "Not saved"}</td>
-      <td className="max-w-44 break-all p-2 text-right font-mono">{change.incoming}</td>
+      <td className="max-w-44 break-all p-2 text-right font-mono text-slate-400">
+        {formatPreviewValue(
+          change.previous,
+          change.category,
+          change.key
+        )}
+      </td>
+      <td className="max-w-44 break-all p-2 text-right font-mono">
+        {formatPreviewValue(
+          change.incoming,
+          change.category,
+          change.key
+        )}
+      </td>
       <td className={`p-2 text-right ${color[change.status]}`}>{change.status}</td>
     </tr>)}
   </>;

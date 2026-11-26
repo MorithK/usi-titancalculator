@@ -4,6 +4,7 @@ import { supabase } from "@/utils/supabase";
 import { loadWarpNodes } from "@/lib/warp/loadWarpData";
 import { calculateWarpObjective, type WarpNode } from "@/lib/warp/warpPlanner";
 import { calculateWarpTime, formatWarpDuration } from "@/lib/warp/warpTiming";
+import Decimal from "decimal.js";
 
 type WarpInfo = {
   warp_id: number;
@@ -14,6 +15,10 @@ type Props = {
   userId: string;
   revision: number;
 };
+
+function formatSkein(value: string | number): string {
+    return new Decimal(value).toFixed(2);
+  }
 
 export default function WarpPanel({ userId, revision }: Props) {
   const [warps, setWarps] = useState<WarpInfo[]>([]);
@@ -240,7 +245,7 @@ export default function WarpPanel({ userId, revision }: Props) {
               Current Skein
             </p>
             <p className="text-xl font-semibold">
-              {skein}
+                {formatSkein(skein)}
             </p>
           </div>
 
@@ -304,31 +309,112 @@ export default function WarpPanel({ userId, revision }: Props) {
             </p>
         )}
         </div>
-
+        
         {result && (
-            <div className="rounded-xl border border-cyan-800 p-5 space-y-2">
-              <h3 className="font-semibold text-cyan-300">
-                Objective: {
-                  nodes.find(node => node.id === targetId)?.name
-                }
-              </h3>
+        <div className="rounded-xl border border-slate-700 bg-slate-900/40 p-5 space-y-5">
+            <div className="space-y-1">
+            <h3 className="text-lg font-semibold text-white">
+                {nodes.find(node => node.id === targetId)?.name}
+                <span className="ml-2 text-sm font-normal text-slate-400">
+                • Next Level
+                </span>
+            </h3>
 
-              <p>Status: {result.status}</p>
-              <p>Total cost: {result.totalCost ?? "—"}</p>
-              <p>
-                Remaining Skein: {result.remainingSkein ?? "—"}
-              </p>
-              <p className="text-xs text-slate-400">
-                Required nodes: {
-                  result.requiredNodes
-                    .map(id =>
-                      nodes.find(node => node.id === id)?.name
-                    )
-                    .join(", ") || "None"
-                }
-              </p>
+            <p className="text-sm text-slate-400">
+                Objective Purchase Breakdown
+            </p>
             </div>
-          )}
+
+            {result.status === "locked" ? (
+            <p className="text-amber-400 text-sm">
+                🔒 Select the objective and its missing prerequisites
+                to calculate the full purchase cost.
+            </p>
+            ) : result.status === "maxed" ? (
+            <p className="text-emerald-400 text-sm">
+                This upgrade is already at its maximum level.
+            </p>
+            ) : (
+            <>
+                <div className="space-y-4">
+                {result.requiredNodes.map((id, index) => {
+                    const node = nodes.find(item => item.id === id);
+                    if (!node) return null;
+
+                    const isObjective = id === targetId;
+
+                    return (
+                    <div
+                        key={id}
+                        className="flex items-start justify-between gap-4"
+                    >
+                        <div className="flex items-start gap-3">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-600 text-xs text-slate-300">
+                            {index + 1}
+                        </div>
+
+                        <div>
+                            <p className="font-medium text-white">
+                            {node.name}
+                            <span className="ml-2 text-xs text-slate-400">
+                                Level {node.level + 1}
+                            </span>
+                            </p>
+
+                            <p className="text-xs text-slate-400">
+                            {isObjective
+                                ? "Objective"
+                                : "Prerequisite"}
+                            </p>
+                        </div>
+                        </div>
+
+                        <span className="whitespace-nowrap font-medium tabular-nums text-white">
+                        {formatSkein(node.cost)} Skein
+                        </span>
+                    </div>
+                    );
+                })}
+                </div>
+
+                <div className="border-t border-slate-700 pt-4 space-y-3">
+                <div className="flex justify-between gap-4 text-sm">
+                    <span className="text-slate-400">
+                    Total Required
+                    </span>
+
+                    <span className="font-medium tabular-nums">
+                    {formatSkein(result.totalCost ?? "0")} Skein
+                    </span>
+                </div>
+
+                <div className="flex justify-between gap-4 text-sm">
+                    <span className="text-slate-400">
+                    Current Balance
+                    </span>
+
+                    <span className="tabular-nums">
+                    {formatSkein(skein)} Skein
+                    </span>
+                </div>
+
+                <div className="border-t border-slate-700 pt-4 flex items-center justify-between gap-4">
+                    <span className="font-semibold text-white">
+                    Still Needed
+                    </span>
+
+                    <span className="text-2xl font-bold tabular-nums text-cyan-300">
+                    {formatSkein(result.remainingSkein ?? "0")}
+                    <span className="ml-2 text-sm font-normal">
+                        Skein
+                    </span>
+                    </span>
+                </div>
+                </div>
+            </>
+            )}
+        </div>
+        )}
 
           <div className="overflow-x-auto rounded-xl border border-slate-700">
             <table className="w-full text-sm">
@@ -369,7 +455,7 @@ export default function WarpPanel({ userId, revision }: Props) {
                     </td>
 
                     <td className="p-3 text-right">
-                      {node.cost}
+                        {formatSkein(node.cost)}
                     </td>
 
                     <td className="p-3 text-center">
@@ -383,7 +469,9 @@ export default function WarpPanel({ userId, revision }: Props) {
                     </td>
 
                     <td className="p-3 text-right">
-                     {nodeResults.get(node.id)?.remainingSkein ?? "—"}
+                        {nodeResults.get(node.id)?.remainingSkein != null
+                        ? formatSkein(nodeResults.get(node.id)!.remainingSkein!)
+                        : "—"}
                     </td>
 
                     <td className="p-3 text-right whitespace-nowrap">

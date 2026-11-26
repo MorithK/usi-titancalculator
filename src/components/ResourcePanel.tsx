@@ -4,18 +4,8 @@ import { supabase } from '../utils/supabase'
 import { calculateCurrentAmount, calculateCurrentAmountExact, formatScientific, getEffectiveGainRate} from '../utils/resourceMath'
 import { type Resource, type usePlayerResources} from '../hooks/usePlayerResources'
 import { type WriteGuard } from '../utils/writeGuard'
+import { getResourceImageSrc } from '../utils/resourceImages'
 
-const resourceImages: Record<string, string> = {
-  Capital: 'Frag_Capital.svg',
-  Veil: 'Frag_Veil.svg',
-  Antum: 'Frag_Antum.svg',
-  Penum: 'Frag_Penum.svg',
-  Zephyrion: 'Alien_Zephyrion.svg',
-  Yttaldar: 'Alien_Yttaldar.svg',
-  Xyloquant: 'Alien_Xyloquant.svg',
-  Wraithtex: 'Alien_Wraithtex.svg',
-  Verdanix: 'Alien_Verdanix.svg'
-}
 
   export default function ResourcePanel({
     userId,
@@ -229,9 +219,9 @@ const resourceImages: Record<string, string> = {
                 <td className="py-3 pr-4 font-medium text-white">
                   <div className="flex items-center gap-3">
 
-                    {resourceImages[resource.resource_name] && (
+                    {getResourceImageSrc(resource.resource_name) && (
                       <img
-                        src={`${import.meta.env.BASE_URL}images/resources/${resourceImages[resource.resource_name]}`}
+                        src={getResourceImageSrc(resource.resource_name)}
                         alt=""
                         aria-hidden="true"
                         className={`h-8 w-8 shrink-0 object-contain ${

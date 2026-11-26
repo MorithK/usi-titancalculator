@@ -6,6 +6,7 @@ import { calculateWarpObjective, type WarpNode } from "@/lib/warp/warpPlanner";
 import { calculateWarpTime, formatWarpDuration } from "@/lib/warp/warpTiming";
 import Decimal from "decimal.js";
 import { calculateCombinedWarpPlan } from "@/lib/warp/warpCombinedPlanner";
+import { calculateWarpMax } from "@/lib/warp/warpMaxPlanner";
 
 type WarpInfo = {
   warp_id: number;
@@ -191,6 +192,80 @@ export default function WarpPanel({ userId, revision }: Props) {
       ])
     );
   }, [nodes, selected, skein]);
+
+  const maxResults = useMemo(() => {
+    return new Map(
+      nodes.map(node => [
+        node.id,
+        calculateWarpMax(node.id, nodes, skein),
+      ])
+    );
+  }, [nodes, skein]);
+  const maxTimes = useMemo(() => {
+    const times = new Map<number, string>();
+  
+    if (warpId !== tetheredWarpId) {
+      return times;
+    }
+  
+    const charge = Number(chargeSeconds);
+    const discharge = Number(dischargeSeconds);
+    const remaining = Number(remainingDischarge);
+  
+    const valid =
+      [chargeSeconds, dischargeSeconds, remainingDischarge,
+        skeinPerCharge].every(value => value.trim() !== "") &&
+      [charge, discharge, remaining].every(Number.isFinite) &&
+      charge >= 0 &&
+      discharge >= 0 &&
+      remaining >= 0 &&
+      remaining <= discharge &&
+      charge + discharge > 0;
+  
+    if (!valid) return times;
+  
+    for (const node of nodes) {
+      const result = maxResults.get(node.id);
+  
+      if (
+        !result ||
+        result.status !== "available" ||
+        result.remainingSkein === null
+      ) {
+        continue;
+      }
+  
+      try {
+        const seconds = calculateWarpTime({
+          remainingSkein: result.remainingSkein,
+          skeinPerCharge,
+          chargeSeconds: charge,
+          dischargeSeconds: discharge,
+          remainingDischargeSeconds: remaining,
+        });
+  
+        times.set(
+          node.id,
+          seconds === 0
+            ? "Available"
+            : formatWarpDuration(seconds)
+        );
+      } catch {
+        // Invalid timing inputs leave the estimate unavailable.
+      }
+    }
+  
+    return times;
+  }, [
+    maxResults,
+    nodes,
+    warpId,
+    tetheredWarpId,
+    chargeSeconds,
+    dischargeSeconds,
+    remainingDischarge,
+    skeinPerCharge,
+  ]);
 
   const nodeTimes = useMemo(() => {
     const times = new Map<number, string>();
@@ -620,6 +695,9 @@ export default function WarpPanel({ userId, revision }: Props) {
                   <th className="p-3 text-right">Remaining Skein</th>
                   <th className="p-3 text-right">Time to Afford</th>
                   <th className="p-3 text-left">Objective</th>
+                  <th className="p-3 text-right">Levels Left</th>
+                  <th className="p-3 text-right">Total to Max</th>
+                  <th className="p-3 text-right">Time to Max</th>
                 </tr>
               </thead>
 
@@ -684,6 +762,25 @@ export default function WarpPanel({ userId, revision }: Props) {
                           ? "Selected"
                           : "Calculate"}
                       </button>
+                    </td>
+                    <td className="p-3 text-right tabular-nums">
+                    {maxResults.get(node.id)?.levelsRemaining ?? "—"}
+                    </td>
+
+                    <td className="p-3 text-right tabular-nums">
+                    {maxResults.get(node.id)?.status === "locked"
+                        ? "Locked"
+                        : maxResults.get(node.id)?.status === "maxed"
+                        ? "Maxed"
+                        : maxResults.get(node.id)?.remainingSkein != null
+                            ? formatSkein(maxResults.get(node.id)!.remainingSkein!)
+                            : "—"}
+                    </td>
+
+                    <td className="p-3 text-right whitespace-nowrap tabular-nums">
+                    {maxResults.get(node.id)?.status === "maxed"
+                        ? "Maxed"
+                        : maxTimes.get(node.id) ?? "—"}
                     </td>
                   </tr>
                 ))}

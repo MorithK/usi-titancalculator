@@ -1,0 +1,402 @@
+classDiagram
+  namespace components {
+    class AffordabilityProgressProps {
+      <<type>>
+      +currentAmount: string | null
+      +targetCost: string | null
+      +resourceName?: string
+      +gainActive?: boolean
+    }
+    class NavItem {
+      <<type>>
+      +id: Section
+      +label: string
+      +icon: LucideIcon
+    }
+    class AppShellProps {
+      <<type>>
+      +userEmail: string
+      +onSignOut: Function
+      +sections: Partial&lt;Record&lt;Section, ReactNode&gt;&gt;
+      +navigationDisabled?: boolean
+    }
+    class UpgradeDefinition {
+      <<type>>
+      +crew_upgrade_id: number
+      +crew_upgrade_name: string
+      +base_cost: string | number
+      +scale: string | number
+      +resource_type_id: number
+      +upgrade_group: string
+      +sector_unlock?: number | null
+    }
+    class LoginProps {
+      <<type>>
+      +email: string
+      +password: string
+      +error: string
+      +onEmailChange: Function
+      +onPasswordChange: Function
+      +onLogin: Function
+    }
+    class RegionalProgression {
+      <<type>>
+      +region_id: number
+      +historical_highest: number
+      +current_run_highest: number
+      +cleared_sector_ids: string[]
+    }
+    class VeilState {
+      <<type>>
+      +current_region_id: number
+      +current_sector: number
+      +current_sector_id: string
+      +next_umbra_sector: number
+      +last_update: string
+    }
+    class OverviewData {
+      <<type>>
+      +regions: RegionalProgression[]
+      +veil: VeilState | null
+    }
+    class PlayerSettingsProps {
+      <<type>>
+      +region: number
+      +saveMessage: string
+      +onRegionChange: Function
+      +onSave: Function
+    }
+    class PurchasePreviewProps {
+      <<type>>
+      +preview: PurchaseSimulation
+      +resources: Resource[]
+      +onClose: Function
+      +onApply: Function
+    }
+    class UpgradeDefinition_2["UpgradeDefinition"] {
+      <<type>>
+      +core_upgrade_id: number
+      +core_upgrade_name: string
+      +base_cost: string | number
+      +scale: string | number
+      +resource_type_id: number
+      +sector_unlock: number
+      +component_type: string
+      +milestone_levels: number[]
+    }
+    class ComponentSlot {
+      <<type>>
+      +slot_number: number
+      +core_upgrade_id: number
+      +current_level: number
+    }
+    class WarpInfo {
+      <<type>>
+      +warp_id: number
+      +warp_name: string
+    }
+    class Props {
+      <<type>>
+      +userId: string
+      +revision: number
+    }
+  }
+  namespace components.saveImport {
+    class ResourceImportPreviewProps {
+      <<interface>>
+      +mapping: ResourceMappingResult
+    }
+  }
+  namespace hooks {
+    class Resource {
+      <<type>>
+      +resource_type_id: number
+      +resource_type: string
+      +resource_name: string
+      +resource_amt: string
+      +resource_gain_rate: string
+      +last_update: string | null
+      +gain_active: boolean
+    }
+  }
+  namespace lib.saveImport {
+    class ImportChange {
+      <<interface>>
+      +category: string
+      +key: string
+      +label: string
+      +previous: string | null
+      +incoming: string
+      +status: 'increase' | 'decrease' | 'unchanged' | 'new' | 'changed'
+    }
+    class SnapshotImportResult {
+      <<interface>>
+      +success: boolean
+      +resources_imported: number
+      +regions_imported: number
+      +titan_components_imported: number
+      +highest_sector: number
+      +region_id: number
+      +imported_at: string
+      +warps_imported: number
+      +warp_nodes_imported: number
+      +crew_upgrades_imported: number
+    }
+    class CoreDefinition {
+      <<interface>>
+      +core_upgrade_id: number
+      +core_upgrade_name: string
+      +component_type: string
+      +game_component_id: string | null
+      +game_upgrade_prefix: string | null
+    }
+    class CrewDefinition {
+      <<interface>>
+      +crew_upgrade_id: number
+      +crew_upgrade_name: string
+      +game_save_key: string | null
+    }
+    class WarpDefinition {
+      <<interface>>
+      +warp_id: number
+      +warp_name: string
+      +game_save_key: string | null
+      +skein_resource_key: string | null
+    }
+    class WarpNodeDefinition {
+      <<interface>>
+      +warp_node_id: number
+      +warp_id: number
+      +node_name: string
+      +save_name: string
+      +max_level: number
+    }
+    class ExistingImportState {
+      <<interface>>
+      +components: object
+      +crew: object
+      +warps: object
+      +nodes: object
+      +tetheredWarpId: number | null
+      +playerUpdatedAt: string | null
+    }
+    class ImportDefinitions {
+      <<interface>>
+      +core: CoreDefinition[]
+      +crew: CrewDefinition[]
+      +warps: WarpDefinition[]
+      +nodes: WarpNodeDefinition[]
+      +current: ExistingImportState
+    }
+    class MappedResource {
+      <<interface>>
+      +resourceTypeId: number
+      +resourceName: string
+      +resourceType: string
+      +currentAmount: string | null
+      +currentGainRate: string | null
+    }
+    class ResourceMappingResult {
+      <<interface>>
+      +mapped: MappedResource[]
+      +unmapped: ImportedResource[]
+      +missing: string[]
+    }
+    class USIDecodedSave {
+      <<interface>>
+      +version: string
+      +compatibilityVersion: number
+      +timestamp: number | null
+      +recordCount: number
+      +records: USISaveRecord[]
+      +data: Record&lt;string, USISaveRecord&gt;
+      +rawJson: string
+    }
+  }
+  namespace lib.saveImport.extractors {
+    class ImportedCrewUpgrade {
+      <<interface>>
+      +crewUpgradeId: number
+      +saveName: string
+      +name: string
+      +level: number
+    }
+    class RegionalProgression_2["RegionalProgression"] {
+      <<interface>>
+      +regionId: number
+      +name: string
+      +historicalHighest: number
+      +currentRunHighest: number
+      +clearedSectorIds: string[]
+    }
+    class ImportedProgression {
+      <<interface>>
+      +currentRegionId: number
+      +currentRegionName: string
+      +currentSector: number
+      +currentSectorId: string
+      +currentSectorVariant: string | null
+      +nextUmbraSector: number
+      +regions: RegionalProgression[]
+    }
+    class ImportedResource {
+      <<interface>>
+      +gameResourceKey: string
+      +amount: string
+      +perSecond: string | null
+      +rawPerSecond: string | null
+    }
+    class ImportedTitanComponent {
+      <<interface>>
+      +slotNumber: number
+      +coreUpgradeId: number
+      +name: string
+      +level: number
+      +gameSaveKey: string
+    }
+    class ImportedWarp {
+      <<interface>>
+      +warpName: string
+      +unlocked: boolean
+      +maxDifficulty: number
+      +numCompletions: number
+      +currentSkein: string
+      +lifetimeSkein: string
+    }
+    class ImportedWarpNode {
+      <<interface>>
+      +saveName: string
+      +level: number
+      +unlocked: boolean
+    }
+    class ImportedWarps {
+      <<interface>>
+      +tetheredWarpName: string
+      +residium: string
+      +warps: ImportedWarp[]
+      +nodes: ImportedWarpNode[]
+    }
+  }
+  namespace lib.warp {
+    class WarpCombinedPlan {
+      <<type>>
+      +status: 'empty' | 'ready' | 'blocked'
+      +requiredNodes: number[]
+      +blockedNodes: number[]
+      +totalCost: string | null
+      +remainingSkein: string | null
+    }
+    class WarpMaxResult {
+      <<type>>
+      +status: 'locked' | 'available' | 'maxed'
+      +levelsRemaining: number
+      +totalCost: string | null
+      +remainingSkein: string | null
+    }
+    class WarpNode {
+      <<type>>
+      +id: number
+      +name: string
+      +level: number
+      +maxLevel: number
+      +cost: string
+      +prerequisites: number[]
+    }
+    class WarpPlanResult {
+      <<type>>
+      +status: 'unlocked' | 'planned' | 'locked' | 'maxed'
+      +requiredNodes: number[]
+      +totalCost: string | null
+      +remainingSkein: string | null
+    }
+    class WarpTimingInput {
+      <<type>>
+      +remainingSkein: string
+      +skeinPerCharge: string
+      +chargeSeconds: number
+      +dischargeSeconds: number
+      +remainingDischargeSeconds: number
+    }
+  }
+  namespace projects {
+    class Project {
+      +id: number | undefined
+      +name: string
+      +description: string
+      +imageUrl: string
+      +contractTypeId: number | undefined
+      +contractSignedOn: Date
+      +budget: number
+      +isActive: boolean
+      +isNew: boolean
+    }
+    class ProjectCardProps {
+      <<interface>>
+      +project: Project
+      +onEdit: Function
+    }
+    class ProjectFormProps {
+      <<interface>>
+      +project: Project
+      +onCancel: Function
+      +onSave: Function
+    }
+    class ProjectListProps {
+      <<interface>>
+      +projects: Project[]
+      +onSave: Function
+    }
+  }
+  namespace utils {
+    class AppliedPurchase {
+      <<type>>
+      +total_levels_bought: number
+      +levels: Record&lt;string, number&gt;
+      +spent: Record&lt;string, string&gt;
+      +remaining_balances: Record&lt;string, string&gt;
+      +applied_at: string
+    }
+    class PurchaseItem {
+      <<type>>
+      +id: string
+      +expectedUpgradeId: number
+      +name: string
+      +currentLevel: number
+      +baseCost: string
+      +scale: string
+      +resourceIds: number[]
+      +requestedLevels: number
+    }
+    class PurchaseSimulation {
+      <<type>>
+      +items: PurchaseResult[]
+      +remainingBalances: Record&lt;number, string&gt;
+      +spent: Record&lt;number, string&gt;
+      +totalLevelsBought: number
+    }
+    class WriteGuard {
+      <<type>>
+      +begin: Function
+      +end: Function
+    }
+  }
+  ImportDefinitions --> CoreDefinition : core
+  ImportDefinitions --> CrewDefinition : crew
+  ImportDefinitions --> ExistingImportState : current
+  ImportDefinitions --> WarpDefinition : warps
+  ImportDefinitions --> WarpNodeDefinition : nodes
+  ImportedProgression --> RegionalProgression_2 : regions
+  ImportedResource <|-- MappedResource
+  ImportedWarps --> ImportedWarp : warps
+  ImportedWarps --> ImportedWarpNode : nodes
+  OverviewData --> RegionalProgression : regions
+  OverviewData --> VeilState : veil
+  ProjectCardProps --> Project : project
+  ProjectFormProps --> Project : project
+  ProjectListProps --> Project : projects
+  PurchasePreviewProps --> PurchaseSimulation : preview
+  PurchasePreviewProps --> Resource : resources
+  PurchaseSimulation --> PurchaseItem : items
+  ResourceImportPreviewProps --> ResourceMappingResult : mapping
+  ResourceMappingResult --> ImportedResource : unmapped
+  ResourceMappingResult --> MappedResource : mapped

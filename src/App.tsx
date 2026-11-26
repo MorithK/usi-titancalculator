@@ -11,6 +11,7 @@ import { type WriteGuard } from './utils/writeGuard'
 import { importPlayerSnapshot, type ApplyResourceImport } from "@/lib/saveImport/importApi";
 import SaveImportPanel from "@/components/SaveImportPanel";
 import PlayerOverview from "./components/PlayerOverview";
+import WarpPanel from "./components/WarpPanel";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -255,6 +256,13 @@ export default function App() {
               onApplyResourceImport={applyResourceImport}
             />
           </fieldset>
+        ),
+
+        warp: (
+          <WarpPanel
+            userId={user.id}
+            revision={resourceRevision}
+          />
         ),
       }}
     />

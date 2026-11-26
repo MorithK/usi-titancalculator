@@ -38,7 +38,7 @@ export function calculateWarpObjective(
     if (nodeId !== targetId && node.level > 0) {
         return true;
       }
-      
+
     // Missing prerequisites must be explicitly selected.
     if (nodeId !== targetId && !selected.has(nodeId)) {
       return false;
@@ -83,6 +83,15 @@ export function calculateWarpObjective(
     if (!node) throw new Error(`Unknown prerequisite ${id}`);
     return node.level > 0;
   });
+
+  if (!alreadyUnlocked && !selected.has(targetId)) {
+    return {
+      status: "locked",
+      requiredNodes: [],
+      totalCost: null,
+      remainingSkein: null,
+    };
+  }
 
   const canPlan = visit(targetId);
 

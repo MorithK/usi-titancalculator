@@ -95,7 +95,6 @@ export default function TitanComponentsPanel({
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [savingSlot, setSavingSlot] = useState<number | null>(null)
-
   
   const selectedSlots = slots
     .filter(slot => {

@@ -16,7 +16,7 @@
 | Remaining levels and max-level costs | Spreadsheet | `src/lib/warp/warpMaxPlanner.ts` | Implemented / tested |
 | Affordability based on discrete Skein cycles | Spreadsheet | `src/lib/warp/warpTiming.ts` | Implemented / tested with manual cycle inputs |
 | Residium purchases, row completion totals | Spreadsheet | — | **Not implemented** |
-| Automatic cycle countdown / award of Skein and Residium | Bound Google Apps Script | — | **Unverified / not implemented** |
+| Automatic cycle countdown / award of Skein and Residium | Bound Google Apps Script | — | **Apps Script inspected; React equivalent not implemented** |
 | Derive per-Warp cycle inputs from game state & modifiers | Save + bonus formulas | — | **Not implemented** |
 
 ## 2. Terminology and state
@@ -68,7 +68,7 @@ else:
 
 This is the current spreadsheet-aligned estimate and implementation contract for `warpTiming.ts`. A correct timing estimate **cannot** be obtained by dividing missing Skein by a continuous per-second rate, because awards occur in complete cycles.
 
-**Assumptions requiring game/script validation:** the next award occurs after the remaining discharge plus a charge, and charge/discharge order, paused/catch-up behaviour, and resource-award timestamps match the sheet's cycle logic. The spreadsheet describes minute-granularity countdown updates and occasional drift, but its **bound Apps Script source is not available through the current Drive connector**. Do not implement automatic state-changing awards from the estimate alone.
+**Assumptions requiring game/script validation:** the next award occurs after the remaining discharge plus a charge, and charge/discharge order, paused/catch-up behaviour, and resource-award timestamps match the sheet's cycle logic. The bound Apps Script source is available as **project Library file `usi-apps-script.txt`** and has now been inspected. Its countdown state machine uses timestamp-anchored phase transitions with minute-based trigger updates. See the verified implementation notes below. The React counterpart is **not implemented**.
 
 Example: `S=156`, `G=43.39`, `R=1070s`, `C=37s`, `D=1849s`: four award cycles, `6765s` = **01:52:45**.
 
@@ -87,6 +87,46 @@ The [wiki's Tether Warp Locations section](https://spaceidle.game-vault.net/wiki
 These are **unmodified wiki baselines**, not current player rates. The spreadsheet's significantly shorter charge/discharge durations already reflect game progression and modifiers. Its displayed 'Sector Unlock' label may differ from the wiki's *clear condition* and *starting difficulty*; keep these concepts distinct.
 
 The wiki states that **Warp Core Charge Speed** determines charge duration, while **Warp Discharge Speed** determines discharge duration. Exact speed-to-seconds calculations still need testing for Titan-phase effective stats.
+
+## 4B. Apps Script countdown and payouts (source inspected)
+
+**Primary source:** project Library file `usi-apps-script.txt` (46,892 bytes, inspected 2026-11-26). Relevant functions: `onEdit`, `handleCheckboxChange`, `toggleTrigger`, `resetWarpCycleToDischarge`, `initializeWarpPhase`, `updateWarpCountdown`, `applyWarpResourcePayout`, `getWarpLookupValue`, `parseDurationToMs` and `buyWarpLevelsDynamic`.
+
+### Observed implementation
+
+1. Enabling the sheet's Warp auto-update checkbox initializes the cycle and schedules `updateWarpCountdown` using a Google Apps Script **time-based trigger every one minute**. Disabling removes that trigger.
+2. Editing the named `warpCurrDischarge` cell manually resets the phase to **DISCHARGE** using the edit timestamp, not the later completion time of script execution.
+3. It stores `WARP_TARGET_TIME` (an absolute millisecond timestamp) and `WARP_PHASE` (`DISCHARGE` / `CHARGE`) in **Script Properties**. The UI countdown is a formatted *view* of the remaining time; it isn't the persistent source of truth.
+4. On a tick, if the target timestamp lies in the future, it updates only the countdown.
+5. If a phase has ended, it loops through **all overdue phase boundaries**, anchored on the *previous scheduled end timestamp* rather than resetting from the current time. This is how the script catches up when multiple cycles elapsed between triggers without drifting on each transition.
+6. **At DISCHARGE completion**, `applyWarpResourcePayout(ss, "RESIDIUM")` increases the **global Residium** balance by the tethered Warp's displayed per-discharge gain, then enters **CHARGE**.
+7. **At CHARGE completion**, `applyWarpResourcePayout(ss, "SKEIN")` increases only the **currently tethered Warp's Skein balance**, then enters **DISCHARGE**.
+8. The sheet looks up charge/discharge duration and award rates via named ranges and the currently selected `TetheredWarp`. A single global Residium balance is distinct from per-Warp Skein balances.
+
+```mermaid
+stateDiagram-v2
+  [*] --> DISCHARGE: Initialize / edit remaining discharge
+  DISCHARGE --> CHARGE: Scheduled end, award global Residium
+  CHARGE --> DISCHARGE: Scheduled end, award tethered Warp Skein
+```
+
+### Implications for the React calculator
+
+- Preserve explicit **phase + absolute target timestamp** if/when implementing a live countdown. A periodically refreshed UI timer should never serve as the authoritative progression state.
+- Keep **global Residium**, **per-Warp Skein**, and **current tether** distinct.
+- The existing `warpTiming.ts` estimate `(remaining discharge + charge) + (cycles-1) × full cycle` is aligned with this **DISCHARGE-first** starting state and the fact that Skein arrives at **charge completion**.
+- The timer's catch-up and awards are **spreadsheet emulation**, not proof the real game grants those exact resources while offline. A future in-app automatic updater needs an explicit reconciliation policy with imported saves before writing anything to Supabase.
+
+### Source-level hazards requiring correction *before reuse*
+
+- The script contains **two declarations of `buyWarpLevelsDynamic`**; in JavaScript the later declaration overrides the earlier one. The later version selects cost/level columns conditionally. Audit the table-column mapping against real named ranges before porting purchase behavior.
+- `getWarpLookupValue` returns `targetValues.getDisplayValues[index]`, although `targetValues` was obtained via `.getValues().flat()` and is an **array**. That expression does **not** index a value as intended and may throw. This could break phase-duration lookup during cycle transitions. The intended operation appears to be `targetValues[index]`, but this is a **proposed fix**, not a confirmed working correction.
+- When `updateWarpCountdown` initializes from an absent target timestamp it calls `cyclePhase.setValue(phase)`, although **`phase` is undefined** in that scope. It should likely set `currentPhase`. Verify actual trigger behavior.
+- `initializeWarpPhase` assigns `durationVal` without `var`, `let` or `const`, creating an implicit global in non-strict JavaScript; avoid this in TypeScript.
+- The script's automatic award path uses `warpCurrResidium`, while the purchase path uses `ResidiumCurrent`. Verify these named ranges point at the same actual balance.
+- When the tethered Warp changes, the active timer and lookup rates may need to be reset or reconciled; the `WarpDropdown` handling in `onEdit` is commented out.
+
+These are **code-inspection findings**. Do not assume every issue manifests in the currently running spreadsheet without reproducing it.
 
 ## 5. Residium upgrades
 
@@ -131,9 +171,9 @@ Finish accurate **calculator** functionality before introducing a strategy simul
 
 - [Game wiki: Warp Drive](https://spaceidle.game-vault.net/wiki/Warp_Drive)
 - [Spreadsheet: WarpCalculator and Notes/Instructions](https://docs.google.com/spreadsheets/d/1xdB9Xdr1SLnLHsQxNrbUPB6cQrC62kfweJQfW6lQxJ8/edit)
-- How does the bound Apps Script handle charge/discharge transitions, elapsed time, award timing and paused state?
+- Confirm the identified Apps Script lookup/phase issues against the live spreadsheet, and determine paused/resumed and tether-switch reconciliation behavior.
 - What are the exact imported Residium balance and upgrade save keys?
 - How do currently equipped modifiers produce per-Warp charge/discharge/Skein/Residium values?
 - Which automatic timing rules differ across Titan-era Warps?
 
-**Last reviewed:** 2026-11-26.
+**Last reviewed:** 2026-11-26 (Apps Script inspected).

@@ -5,6 +5,7 @@ import { loadWarpNodes } from "@/lib/warp/loadWarpData";
 import { calculateWarpObjective, type WarpNode } from "@/lib/warp/warpPlanner";
 import { calculateWarpTime, formatWarpDuration } from "@/lib/warp/warpTiming";
 import Decimal from "decimal.js";
+import { calculateCombinedWarpPlan } from "@/lib/warp/warpCombinedPlanner";
 
 type WarpInfo = {
   warp_id: number;
@@ -115,6 +116,67 @@ export default function WarpPanel({ userId, revision }: Props) {
       skein
     );
   }, [targetId, nodes, selected, skein]);
+
+  const combinedPlan = useMemo(() => {
+    return calculateCombinedWarpPlan(
+      nodes,
+      selected,
+      skein
+    );
+  }, [nodes, selected, skein]);
+
+  const combinedTime = useMemo(() => {
+    if (
+      combinedPlan.status !== "ready" ||
+      selected.size === 0 ||
+      warpId !== tetheredWarpId ||
+      combinedPlan.remainingSkein === null
+    ) {
+      return null;
+    }
+  
+    const charge = Number(chargeSeconds);
+    const discharge = Number(dischargeSeconds);
+    const remaining = Number(remainingDischarge);
+  
+    if (
+      [chargeSeconds, dischargeSeconds, remainingDischarge,
+        skeinPerCharge].some(value => value.trim() === "") ||
+      ![charge, discharge, remaining].every(Number.isFinite) ||
+      charge < 0 ||
+      discharge < 0 ||
+      remaining < 0 ||
+      remaining > discharge ||
+      charge + discharge <= 0
+    ) {
+      return null;
+    }
+  
+    try {
+      const seconds = calculateWarpTime({
+        remainingSkein: combinedPlan.remainingSkein,
+        skeinPerCharge,
+        chargeSeconds: charge,
+        dischargeSeconds: discharge,
+        remainingDischargeSeconds: remaining,
+      });
+  
+      return seconds === 0
+        ? "Available"
+        : formatWarpDuration(seconds);
+    } catch {
+      return null;
+    }
+  }, [
+    combinedPlan,
+    selected,
+    warpId,
+    tetheredWarpId,
+    chargeSeconds,
+    dischargeSeconds,
+    remainingDischarge,
+    skeinPerCharge,
+  ]);
 
   const nodeResults = useMemo(() => {
     return new Map(
@@ -415,6 +477,136 @@ export default function WarpPanel({ userId, revision }: Props) {
             )}
         </div>
         )}
+
+
+        {selected.size > 0 && (
+        <div className="rounded-xl border border-cyan-800 bg-slate-900/40 p-5 space-y-5">
+            <div>
+            <h3 className="text-lg font-semibold text-white">
+                Combined Purchase Plan
+            </h3>
+            <p className="text-sm text-slate-400">
+                Total cost of all selected upgrades, with shared
+                prerequisites counted only once.
+            </p>
+            </div>
+
+        {combinedPlan.status === "blocked" ? (
+        <div className="space-y-2">
+            <p className="text-sm text-amber-400">
+            🔒 Some selected upgrades have missing prerequisites.
+            </p>
+
+            {combinedPlan.blockedNodes.map(id => {
+            const node = nodes.find(item => item.id === id);
+
+            return (
+                <p key={id} className="text-sm text-slate-300">
+                {node?.name ?? `Node ${id}`}
+                </p>
+            );
+            })}
+
+            <p className="text-xs text-slate-400">
+            Select all missing prerequisites to calculate
+            the complete purchase plan.
+            </p>
+        </div>
+        ) : (
+        <>
+            <div className="space-y-4">
+            {combinedPlan.requiredNodes.map((id, index) => {
+                const node = nodes.find(item => item.id === id);
+                if (!node) return null;
+
+                return (
+                <div
+                    key={id}
+                    className="flex items-start justify-between gap-4"
+                >
+                    <div className="flex items-start gap-3">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-600 text-xs text-slate-300">
+                        {index + 1}
+                    </div>
+
+                    <div>
+                        <p className="font-medium text-white">
+                        {node.name}
+                        <span className="ml-2 text-xs text-slate-400">
+                            Level {node.level + 1}
+                        </span>
+                        </p>
+
+                        <p className="text-xs text-slate-400">
+                        {selected.has(id)
+                            ? "Selected upgrade"
+                            : "Required prerequisite"}
+                        </p>
+                    </div>
+                    </div>
+
+                    <span className="whitespace-nowrap font-medium tabular-nums text-white">
+                    {formatSkein(node.cost)} Skein
+                    </span>
+                </div>
+                );
+            })}
+
+            {combinedPlan.requiredNodes.length === 0 && (
+                <p className="text-sm text-slate-400">
+                No additional purchases required.
+                </p>
+            )}
+            </div>
+
+            <div className="border-t border-slate-700 pt-4 space-y-3">
+            <div className="flex justify-between gap-4 text-sm">
+                <span className="text-slate-400">
+                Total Required
+                </span>
+                <span className="font-medium tabular-nums">
+                {formatSkein(combinedPlan.totalCost ?? "0")} Skein
+                </span>
+            </div>
+
+            <div className="flex justify-between gap-4 text-sm">
+                <span className="text-slate-400">
+                Current Balance
+                </span>
+                <span className="tabular-nums">
+                {formatSkein(skein)} Skein
+                </span>
+            </div>
+
+            <div className="border-t border-slate-700 pt-4 flex items-center justify-between gap-4">
+                <span className="font-semibold text-white">
+                Still Needed
+                </span>
+                <span className="text-2xl font-bold tabular-nums text-cyan-300">
+                {formatSkein(combinedPlan.remainingSkein ?? "0")}
+                <span className="ml-2 text-sm font-normal">
+                    Skein
+                </span>
+                </span>
+            </div>
+
+            <div className="flex justify-between gap-4 text-sm">
+                <span className="text-slate-400">
+                Total Time to Afford
+                </span>
+                <span className="font-semibold tabular-nums text-white">
+                {combinedTime ??
+                    (warpId !== tetheredWarpId
+                    ? "Not tethered"
+                    : "Unavailable")}
+                </span>
+            </div>
+            </div>
+        </>
+        )}
+    </div>
+    )}
+
 
           <div className="overflow-x-auto rounded-xl border border-slate-700">
             <table className="w-full text-sm">

@@ -44,3 +44,13 @@ Potentially Missing:
 Spliced Researcher: Warp Corruption
 Spliced Phenomenologist: Warp Discipline
 Spliced Phenomenologist: Warp Enlightenment
+
+---
+
+## Mapping notes (2026-11-26)
+
+**Observed stat, not an equation.** This breakdown has three distinct stages: flat additions, additive multipliers and multiplicative multipliers. Preserve each stage before trying to reproduce the final charge speed.
+
+The [wiki's Massive Warp Drive section](https://spaceidle.game-vault.net/wiki/Warp_Drive) confirms that upgrading the Massive Warp Drive includes a **×0.015** Warp Core charge-speed factor, matching the snapshot's `Capital: Massive Warp Drive: x0.015`. This confirms the **effect factor**, not the full charge-duration equation or its save key. The later Titan tether section says charge duration depends on this effective speed.
+
+**Validation:** Determine exact additive-stage math; map active source records; test derived duration for Senectus, Tiberinus and Ullr. The listed *potentially missing* sources remain unresolved.

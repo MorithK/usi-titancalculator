@@ -189,19 +189,19 @@ import { getResourceImageSrc } from '../utils/resourceImages'
 
   return (
     <section className="rounded-xl border border-slate-800
-      bg-[#111827] p-6">
-      <h3 className="mb-2 text-lg font-semibold text-white">
+      bg-[#111827] p-2 pr-4 pl-4">
+      <h3 className="mb-1 text-lg font-semibold text-white">
         {resourceType === 'Fragment'
           ? 'Fragments'
-          : 'Specimens'}
+          : 'Specimen'}
       </h3>
 
-      <p className="mb-5 text-sm text-slate-400">
-        Current resource balances and generation rates.
+      <p className="mb-3 text-sm text-slate-400">
+        Current resource balance and generation rates.
       </p>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-150 text-left text-sm">
+        <table className="w-full min-w-50 text-left text-sm">
           <thead>
             <tr className="border-b border-slate-700 text-slate-400">
               <th className="pb-3">Resource</th>
@@ -216,15 +216,15 @@ import { getResourceImageSrc } from '../utils/resourceImages'
                 key={resource.resource_type_id}
                 className="border-b border-slate-800"
               >
-                <td className="py-3 pr-4 font-medium text-white">
-                  <div className="flex items-center gap-3">
+                <td className="py-2 pr-4 font-medium text-white">
+                  <div className="flex items-center gap-2 ">
 
                     {getResourceImageSrc(resource.resource_name) && (
                       <img
                         src={getResourceImageSrc(resource.resource_name)}
                         alt=""
                         aria-hidden="true"
-                        className={`h-8 w-8 shrink-0 object-contain ${
+                        className={`h-6 w-6 shrink-0 object-contain ${
                           resourceType === 'Specimen' ? 'brightness-0 invert' : ''
                         }`}
                       />
@@ -235,7 +235,7 @@ import { getResourceImageSrc } from '../utils/resourceImages'
                   </div>
                 </td>
                 
-                <td className="py-3 pr-3">
+                <td className="py-2 pr-3">
                   {editingAmountId === resource.resource_type_id ? (
                     <div className="flex items-center gap-2">
                       <input
@@ -258,8 +258,8 @@ import { getResourceImageSrc } from '../utils/resourceImages'
                         value={amountDraft}
                         onChange={e => setAmountDraft(e.target.value)}
                         disabled={savingId !== null}
-                        className="min-w-0 w-44 rounded-md border border-slate-700
-                          bg-slate-900 px-3 py-2 font-mono text-cyan-400"
+                        className="min-w-0 w-33 rounded-md border border-slate-700
+                          bg-slate-900 px-3 py-1 font-mono text-cyan-400"
                       />
 
                       <button
@@ -305,7 +305,7 @@ import { getResourceImageSrc } from '../utils/resourceImages'
                   )}
                 </td>
 
-                <td className="py-3 pr-3">
+                <td className="py-2 pr-3">
                   <input
                     onFocus={e => e.currentTarget.select()}
                     key={`${resource.resource_type_id}-${resource.last_update ?? 'new'}`}
@@ -336,7 +336,7 @@ import { getResourceImageSrc } from '../utils/resourceImages'
                       }
                     }}
                     className={`w-full rounded-md border border-slate-700
-                      bg-slate-900 px-3 py-2 font-mono
+                      bg-slate-900 px-3 py-1 font-mono
                       focus:border-cyan-400 focus:outline-none
                       disabled:opacity-50
                       ${

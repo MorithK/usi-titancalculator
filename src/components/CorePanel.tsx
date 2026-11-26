@@ -26,19 +26,21 @@ export default function CorePanel({
 
   return (
     <>
-      <ResourcePanel
-        userId={userId}
-        resourceState={resourceState}
-        resourceType="Fragment"
-        writeGuard={writeGuard}
-      />
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <ResourcePanel
+          userId={userId}
+          resourceState={resourceState}
+          resourceType="Fragment"
+          writeGuard={writeGuard}
+        />
 
-      <ResourcePanel
-        userId={userId}
-        resourceState={resourceState}
-        resourceType="Specimen"
-        writeGuard={writeGuard}
-      />
+        <ResourcePanel
+          userId={userId}
+          resourceState={resourceState}
+          resourceType="Specimen"
+          writeGuard={writeGuard}
+        />
+      </div>
 
       <TitanComponentsPanel
         userId={userId}

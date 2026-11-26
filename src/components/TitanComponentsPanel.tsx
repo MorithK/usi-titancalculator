@@ -9,6 +9,7 @@ import AffordabilityProgress from './AffordabilityProgress'
 import { simulatePurchases, type PurchaseItem, type PurchaseSimulation } from '../utils/purchaseMath'
 import PurchasePreview from './PurchasePreview'
 import { type WriteGuard } from '../utils/writeGuard'
+import { getResourceImageSrc } from '../utils/resourceImages'
 import { type ApplyPurchases } from '../utils/purchaseApi'
  
 type UpgradeDefinition = {
@@ -28,17 +29,6 @@ type ComponentSlot = {
   current_level: number
 }
 
-const resourceImages: Record<string, string> = {
-  Capital: 'Frag_Capital.svg',
-  Veil: 'Frag_Veil.svg',
-  Antum: 'Frag_Antum.svg',
-  Penum: 'Frag_Penum.svg',
-  Zephyrion: 'Alien_Zephyrion.svg',
-  Yttaldar: 'Alien_Yttaldar.svg',
-  Xyloquant: 'Alien_Xyloquant.svg',
-  Wraithtex: 'Alien_Wraithtex.svg',
-  Verdanix: 'Alien_Verdanix.svg'
-}
 
 const slotDefinitions = [
   { slot: 1, label: 'Weapon 1', defaultId: 2, type: 'Weapon' },
@@ -689,13 +679,15 @@ export default function TitanComponentsPanel({
                               <span className="inline-flex items-center justify-end gap-2">
                                 {formatScientific(nextCost)}
 
-                                {(resource?.resource_name ??
-                                  resourceNames[definition!.resource_type_id]) && (
+                                {getResourceImageSrc(
+                                  resource?.resource_name ??
+                                    resourceNames[definition!.resource_type_id]
+                                ) && (
                                   <img
-                                    src={`${import.meta.env.BASE_URL}images/resources/${resourceImages[
+                                    src={getResourceImageSrc(
                                       resource?.resource_name ??
-                                      resourceNames[definition!.resource_type_id]
-                                    ]}`}
+                                        resourceNames[definition!.resource_type_id]
+                                    )}
                                     alt={resource?.resource_name ??
                                       resourceNames[definition!.resource_type_id]}
                                     className="h-5 w-5 shrink-0 object-contain"

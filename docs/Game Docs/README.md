@@ -5,6 +5,7 @@
 ## How to use these documents
 
 - **[System documents](systems/)** describe how each mechanic works, what game state it needs, what it produces, and how other systems affect it.
+- **[Bonus snapshot inventory](bonuses/README.md)** indexes the 35 tracked statistics, including placeholders and known missing sources.
 - **[Bonus snapshots](bonuses/)** preserve the *observed* in-game stat breakdowns from **26 November 2026**. The listed multipliers are observations at a particular progression state, **not** automatically reusable formulas.
 - **[Modifier map](modifier-map.md)** tracks sources, effects, operations, activation conditions, candidate save keys, and verification.
 - **[Warp system](systems/warp.md)** is the current implementation focus.

@@ -10,6 +10,9 @@ import PurchasePreview from './PurchasePreview'
 import { simulatePurchases, type PurchaseItem, type PurchaseSimulation} from '../utils/purchaseMath'
 import { type WriteGuard } from '../utils/writeGuard'
 import { type ApplyPurchases } from '../utils/purchaseApi'
+import { getResourceImageSrc } from '../utils/resourceImages'
+
+
 type UpgradeDefinition = {
   crew_upgrade_id: number
   crew_upgrade_name: string
@@ -166,7 +169,6 @@ export default function CrewUpgradesPanel({
       )
     }
   }
-  
     
   useEffect(() => {
     let cancelled = false
@@ -279,7 +281,6 @@ export default function CrewUpgradesPanel({
   
     try {
       const snapshotTime = nowMs
-  
       const balances: Record<number, string> = {}
   
       for (const resource of resources) {
@@ -406,267 +407,293 @@ export default function CrewUpgradesPanel({
                       : null
 
                     const requirements = requiredIds.map(resourceId => {
-                      const resource = resources.find(
-                        item => item.resource_type_id === resourceId
-                      )
+                    const resource = resources.find(
+                      item => item.resource_type_id === resourceId
+                    )
 
-                      const currentAmount = resource
-                        ? calculateCurrentAmountExact(
-                            resource.resource_amt,
-                            getEffectiveGainRate(resource),
-                            resource.last_update,
-                            nowMs
-                          )
-                        : null
-
-                      const affordableLevels =
-                        nextCost !== null && currentAmount !== null
-                          ? calculateAffordableLevels(
-                              String(definition.base_cost),
-                              String(definition.scale),
-                              level,
-                              currentAmount
-                            )
-                          : null
-
-                      const affordability =
-                        resource && nextCost !== null
-                          ? calculateTimeToAfford(
-                              currentAmount,
-                              getEffectiveGainRate(resource),
-                              nextCost
-                            )
-                          : null
-
-                        return {
-                            resourceId,
-                            resource,
-                            currentAmount,
-                            affordableLevels,
-                            affordability
-                        }
-                    })
+                    const currentAmount = resource
+                      ? calculateCurrentAmountExact(
+                         resource.resource_amt,
+                         getEffectiveGainRate(resource),
+                         resource.last_update,
+                         nowMs
+                        )
+                      : null
 
                     const affordableLevels =
-                      requirements.every(
-                        item => item.affordableLevels !== null
-                      )
-                        ? Math.min(
-                            ...requirements.map(
-                              item => item.affordableLevels!
-                            )
+                      nextCost !== null && currentAmount !== null
+                        ? calculateAffordableLevels(
+                            String(definition.base_cost),
+                            String(definition.scale),
+                            level,
+                            currentAmount
                           )
                         : null
 
                     const affordability =
-                      requirements.every(
-                        item => item.affordability !== null
-                      )
-                        ? combineAffordability(
-                            requirements.map(
-                              item => item.affordability!
-                            )
+                      resource && nextCost !== null
+                        ? calculateTimeToAfford(
+                            currentAmount,
+                            getEffectiveGainRate(resource),
+                            nextCost
                           )
                         : null
 
-                    return (
-                      <Fragment key={id}>
-                        <tr className="border-b border-slate-800">
+                    return {
+                      resourceId,
+                      resource,
+                      currentAmount,
+                      affordableLevels,
+                      affordability
+                    }
+                  })
+
+                  const affordableLevels =
+                    requirements.every(
+                      item => item.affordableLevels !== null
+                    )
+                      ? Math.min(
+                          ...requirements.map(
+                            item => item.affordableLevels!
+                          )
+                        )
+                      : null
+
+                  const affordability =
+                    requirements.every(
+                      item => item.affordability !== null
+                    )
+                      ? combineAffordability(
+                        requirements.map(
+                          item => item.affordability!
+                          )
+                        )
+                      : null
+
+                  return (
+                    <Fragment key={id}>
+                      <tr className="border-b border-slate-800">
                         
-                     {/* Purchase Selection */}
-                        <td className="py-3 pr-4 text-center">
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.includes(id)}
-                            disabled={
-                              locked ||
-                              !validLevel ||
-                              level >= 2147483647 ||
-                              savingId !== null ||
-                              resourcesLoading ||
-                              !!resourcesError ||
-                              requirements.some(item => !item.resource)
-                            }
-                            onChange={e => toggleUpgrade(
-                              id,
-                              e.target.checked
-                            )}
-                            aria-label={`Select ${definition.crew_upgrade_name} for purchase`}
-                            className="h-4 w-4 cursor-pointer
-                              accent-cyan-500 disabled:opacity-40"
-                          />
-                        </td>
+                  {/* Purchase Selection */}
+                      <td className="py-3 pr-4 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(id)}
+                          disabled={
+                            locked ||
+                            !validLevel ||
+                            level >= 2147483647 ||
+                            savingId !== null ||
+                            resourcesLoading ||
+                            !!resourcesError ||
+                            requirements.some(item => !item.resource)
+                          }
+                          onChange={e => toggleUpgrade(
+                            id,
+                            e.target.checked
+                          )}
+                          aria-label={`Select ${definition.crew_upgrade_name} for purchase`}
+                          className="h-4 w-4 cursor-pointer
+                            accent-cyan-500 disabled:opacity-40"
+                        />
+                      </td>
 
                     {/* Upgrade Name  */}       
-                          <td className="py-3 pr-4 text-white">
-                            {definition.crew_upgrade_name}
-                          </td>
+                       <td className="py-3 pr-4 text-white">
+                          {definition.crew_upgrade_name}
+                        </td>
 
                     {/* Current Level  */}       
-                          <td className="py-3 pr-4">
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="number"
-                                min={0}
-                                step={1}
-                                value={level}
-                                disabled={savingId !== null || locked}
-                                onFocus={e => e.currentTarget.select()}
-                                onChange={e => {
-                                  setPurchasePreview(null)
-                                  setLevels(previous => ({
-                                    ...previous,
-                                    [id]: Number(e.target.value)
-                                  }))
-                                  setMessage('')
-                                }}
-                                className="w-24 rounded-md border
-                                  border-slate-700 bg-slate-900
-                                  px-3 py-2 text-white"
-                              />
+                        <td className="py-3 pr-4">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min={0}
+                              step={1}
+                              value={level}
+                              disabled={savingId !== null || locked}
+                              onFocus={e => e.currentTarget.select()}
+                              onChange={e => {
+                                setPurchasePreview(null)
+                                setLevels(previous => ({
+                                  ...previous,
+                                  [id]: Number(e.target.value)
+                                }))
+                                setMessage('')
+                              }}
+                              className="w-24 rounded-md border
+                                border-slate-700 bg-slate-900
+                                px-3 py-2 text-white"
+                            />
                     
                     {/* Available Levels */}
-                              {affordableLevels !== null && (
-                                <span className={`min-w-10
-                                  font-mono text-sm ${
-                                    affordableLevels > 0
-                                      ? 'text-green-400'
-                                      : 'text-slate-500'
-                                  }`}>
-                                  {affordableLevels >= AFFORDABLE_LEVEL_LIMIT
-                                    ? `${AFFORDABLE_LEVEL_LIMIT}+`
-                                    : `+${affordableLevels}`}
-                                </span>
-                              )}
-                            </div>
-                          </td>
+                            {affordableLevels !== null && (
+                              <span className={`min-w-10
+                                font-mono text-sm ${
+                                  affordableLevels > 0
+                                    ? 'text-green-400'
+                                    : 'text-slate-500'
+                                }`}>
+                                {affordableLevels >= AFFORDABLE_LEVEL_LIMIT
+                                  ? `${AFFORDABLE_LEVEL_LIMIT}+`
+                                  : `+${affordableLevels}`}
+                              </span>
+                            )}
+                          </div>
+                        </td>
 
                     {/* Next Level Cost */}
-                          <td className="py-3 text-right font-mono text-cyan-400">
-                            {locked
-                              ? 'Locked'
-                              : nextCost !== null
-                                ? (
-                                  <>
+                        <td className="py-3 text-right font-mono text-cyan-400">
+                          {locked
+                            ? 'Locked'
+                            : nextCost !== null
+                              ? (
+                                <>
+                                  <span className="inline-flex items-center justify-end gap-2">
                                     {formatScientific(nextCost)}
-                                    <span className="ml-2 text-xs
-                                      text-slate-400">
-                                      {allSpecimens
-                                        ? 'each'
-                                        : requirements[0].resource
-                                            ?.resource_name}
-                                    </span>
-                                  </>
+                                    {getResourceImageSrc(
+                                      requirements[0]?.resource?.resource_name
+                                    ) && (
+                                      <img
+                                        src={getResourceImageSrc(
+                                          requirements[0]?.resource?.resource_name
+                                        )}
+                                        alt={requirements[0]?.resource?.resource_name}
+                                        className={`h-5 w-5 shrink-0 object-contain ${
+                                          allSpecimens ? 'brightness-0 invert' : ''
+                                        }`}
+                                      />
+                                    )}
+                                  </span>                                   
+                                </>
+
                                 )
-                                : 'Unavailable'}
-                          </td>
+                              : 'Unavailable'}
+                        </td>
         
                     {/* Remaining */}      
-                          <td className="py-3 pl-4 text-right">
-                            {allSpecimens
-                                ? 'See below'
-                                : (
-                                <AffordabilityProgress
-                                    currentAmount={requirements[0].currentAmount}
-                                    targetCost={nextCost}
-                                    resourceName={requirements[0].resource?.resource_name}
-                                    gainActive={requirements[0].resource?.gain_active}
-                                />
-                                )}
-                          </td>
+                        <td className="py-3 pl-4 text-right">
+                          {allSpecimens
+                              ? 'See below'
+                              : (
+                              <AffordabilityProgress
+                                  currentAmount={requirements[0].currentAmount}
+                                  targetCost={nextCost}
+                                  resourceName={requirements[0].resource?.resource_name}
+                                  gainActive={requirements[0].resource?.gain_active}
+                              />
+                              )}
+                        </td>
 
                     {/* Time to Afford */}      
-                          <td className={`py-3 pl-4 text-right
-                            font-mono ${
-                              affordability?.status === 'ready'
-                                ? 'text-green-400'
-                                : 'text-slate-300'
-                            }`}>
-                            {locked
-                              ? 'Locked'
-                              : resourcesLoading
-                                ? 'Loading...'
-                                : resourcesError
-                                  ? 'Resource error'
-                                  : affordability
-                                    ? formatTimeToAfford(affordability)
-                                    : 'Unavailable'}
-                          </td>
+                        <td className={`py-3 pl-4 text-right
+                          font-mono ${
+                            affordability?.status === 'ready'
+                              ? 'text-green-400'
+                              : 'text-slate-300'
+                          }`}>
+                          {locked
+                            ? 'Locked'
+                            : resourcesLoading
+                              ? 'Loading...'
+                              : resourcesError
+                                ? 'Resource error'
+                                : affordability
+                                  ? formatTimeToAfford(affordability)
+                                  : 'Unavailable'}
+                        </td>
                           
                     {/* Save Button */}      
-                          <td className="py-3 pl-4 text-right">
-                            <button
-                              type="button"
-                              disabled={
-                                savingId !== null ||
-                                locked ||
-                                !validLevel
-                              }
-                              onClick={() =>
-                                void saveUpgrade(definition, level)
-                              }
-                              className="rounded-md bg-cyan-500
-                                px-4 py-2 font-medium text-slate-950
-                                hover:bg-cyan-400 disabled:opacity-50"
-                            >
-                              {savingId === id ? 'Saving...' : 'Save'}
-                            </button>
-                          </td>
-                        </tr>
+                        <td className="py-3 pl-4 text-right">
+                          <button
+                            type="button"
+                            disabled={
+                              savingId !== null ||
+                              locked ||
+                              !validLevel
+                            }
+                            onClick={() =>
+                              void saveUpgrade(definition, level)
+                            }
+                            className="rounded-md bg-cyan-500
+                              px-4 py-2 font-medium text-slate-950
+                              hover:bg-cyan-400 disabled:opacity-50"
+                          >
+                           {savingId === id ? 'Saving...' : 'Save'}
+                          </button>
+                        </td>
+                      </tr>
                        
                     {/* Corruption Cap specimen list */}      
 
-                        {allSpecimens && !locked &&
-                          requirements.map(item => (
-                            <tr
-                              key={item.resourceId}
-                              className="bg-slate-900/40
-                                text-xs text-slate-400"
-                            >
-                              <td></td>
-                              <td className="py-2 pl-8">
+                      {allSpecimens && !locked &&
+                        requirements.map(item => (
+                          <tr
+                            key={item.resourceId}
+                            className="bg-slate-900/40
+                              text-xs text-slate-400"
+                          >
+                            <td></td>
+                            <td className="py-2 pl-8">
+                              <span className="inline-flex items-center justify-end gap-2">
+                                {getResourceImageSrc(
+                                  item.resource?.resource_name
+                                ) && (
+                                  <img
+                                    src={getResourceImageSrc(
+                                      item.resource?.resource_name
+                                    )}
+                                    alt={requirements[0]?.resource?.resource_name}
+                                    className={`h-5 w-5 shrink-0 object-contain ${
+                                      allSpecimens ? 'brightness-0 invert' : ''
+                                    }`}                                
+                                  />
+                                )}
                                 {item.resource?.resource_name ??
-                                  'Unknown specimen'}
-                              </td>
+                                'Unknown specimen'}
+                              </span>
+                            </td>  
+                            {/*<td className="py-2 pl-8">
+                              {item.resource?.resource_name ??
+                                'Unknown specimen'}
+                            </td>*/}
+                             <td></td>
+                             <td className="py-2 text-right font-mono">
+                              {nextCost !== null
+                                ? formatScientific(nextCost)
+                                : '—'}
+                            </td>
+                            <td className="py-2 pl-4 text-right">
+                              <AffordabilityProgress
+                                currentAmount={item.currentAmount}
+                                  targetCost={nextCost}
+                                 resourceName={item.resource?.resource_name}
+                                 gainActive={item.resource?.gain_active}
+                              />
+                            </td>
 
-                              <td></td>
+                            <td className={`py-2 pl-4
+                              text-right font-mono ${
+                                item.affordability?.status === 'ready'
+                                  ? 'text-green-400'
+                                  : 'text-slate-400'
+                              }`}>
+                              {item.affordability
+                                ? formatTimeToAfford(item.affordability)
+                                : '—'}
+                            </td>
 
-                              <td className="py-2 text-right font-mono">
-                                {nextCost !== null
-                                  ? formatScientific(nextCost)
-                                  : '—'}
-                              </td>
-                              <td className="py-2 pl-4 text-right">
-                                <AffordabilityProgress
-                                  currentAmount={item.currentAmount}
-                                    targetCost={nextCost}
-                                   resourceName={item.resource?.resource_name}
-                                   gainActive={item.resource?.gain_active}
-                                />
-                              </td>
-
-                              <td className={`py-2 pl-4
-                                text-right font-mono ${
-                                  item.affordability?.status === 'ready'
-                                    ? 'text-green-400'
-                                    : 'text-slate-400'
-                                }`}>
-                                {item.affordability
-                                  ? formatTimeToAfford(item.affordability)
-                                  : '—'}
-                              </td>
-
-                              <td></td>
-                            </tr>
-                          ))}
-                      </Fragment>
-                    )
-                  })}
-              </Fragment>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                            <td></td>
+                          </tr>
+                        ))}
+                    </Fragment>
+                  )
+                })}
+            </Fragment>
+          ))}
+        </tbody>
+      </table>
+    </div>
 
       <div className="mt-5 flex items-center gap-4">
         <button

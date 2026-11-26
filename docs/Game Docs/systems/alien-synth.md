@@ -4,7 +4,7 @@
 
 ## Confirmed conceptual distinctions
 
-Alien Synth is a later-unlocked subsection of Synth, with its **own recipe chains, inventory and speed value**. It does **not** equip conventional Synth Modules as the regular Synth system does; its production and progression provide bonuses through other mechanics. Do not conflate *Synth Speed* with *Alien Synth Speed Multiplier*.
+Alien Synth is a later-unlocked subsection of Synth, with its **own recipe chains, inventory and speed value**. At the user's current Titan-phase progression it does **not** use an independent active Synth Module loadout; progression instead provides bonuses through other mechanics. **Earlier progression differs:** the [wiki](https://spaceidle.game-vault.net/wiki/Synth) lists temporary *T1 Alien Synth modules*, which are replaced with a permanent **Alien Integration** upgrade on reaching T1 Integrator level 1. We must account for this transition rather than declare Alien Synth never has modules. Do not conflate *Synth Speed* with *Alien Synth Speed Multiplier*.
 
 The game save mixes both systems' recipe records under `save_name: "Recipes"`; this shared storage **does not** mean the two systems use a single inventory or speed multiplier.
 
@@ -17,7 +17,7 @@ YttaldarBaseT1
 ZephyrionBaseT1
 ```
 
-Each is a `<SpecimenType>BaseT1` form. This is a **starting candidate set**, not a completed classification of the recipe graph: recursively inspect ingredients, recipe relationships, and additional roots before assigning all recipes to a subsystem. Confirm save spelling of keys against the decoded data. **Exact Titan-era unlock stage remains unverified.**
+Each is a `<SpecimenType>BaseT1` form. This is a **starting candidate set**, not a completed classification of the recipe graph: recursively inspect ingredients, recipe relationships, and additional roots before assigning all recipes to a subsystem. Confirm save spelling of keys against the decoded data. **Progression note:** The [wiki's Alien Synth section](https://spaceidle.game-vault.net/wiki/Synth) identifies the initial Alien Synth unlock as **clearing Galaxy 4 BB2**. The user's question about the stage at which a player entering the **Titan phase** has progressed in this system remains separate and unverified.
 
 ## Reference speed breakdown (November 26, 2026)
 
@@ -46,6 +46,8 @@ flowchart TD
     CALC --> OBJ["Complete objective time/materials"]
     CALC --> OUT["Produced resources / direct game bonuses"]
 ```
+
+**Wiki production caveat:** For Alien Synth recipes the wiki describes regular Synth Speed being raised to the power **0.1**, while ordinary Synth XP/output multipliers do not apply. The interaction with the distinct in-game **Alien Synth Speed Multiplier** needs verification; do not simply reuse standard Synth timing.
 
 The graph may **share recursive crafting algorithms** with standard Synth, but its inventory, inputs, speed and reward paths remain independent. Don't assume their exact time formula is identical.
 

@@ -13,3 +13,11 @@ Total Multiplicative Bonus: 155.25
 Stat Total: 155.25
 
 Missing: Synth Shard
+
+---
+
+## Mapping notes (2026-11-26)
+
+This value is **Alien Synth Speed Multiplier**, distinct from standard Synth Speed. In the observed snapshot the **Synth Shard is not equipped**, so its bonuses must not be added. The listed five factors multiply to the displayed **155.25**.
+
+The [wiki's Alien Synth section](https://spaceidle.game-vault.net/wiki/Synth) additionally describes a special recipe speed relationship involving regular Synth Speed raised to **0.1**. This does **not** establish how the separate Alien Synth Speed Multiplier is applied; determine the combined duration calculation from game observations before implementing.

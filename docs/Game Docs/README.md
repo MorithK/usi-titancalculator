@@ -9,6 +9,7 @@
 - **[Bonus snapshots](bonuses/)** preserve the *observed* in-game stat breakdowns from **26 November 2026**. The listed multipliers are observations at a particular progression state, **not** automatically reusable formulas.
 - **[Modifier map](modifier-map.md)** tracks sources, effects, operations, activation conditions, candidate save keys, and verification.
 - **[Warp system](systems/warp.md)** is the current implementation focus.
+- **[Titan-entry baseline](reference-saves/titan-entry.md)** records the earliest supported Titan-phase save and proposed regression tests.
 - **[Synth system](systems/synth.md)** includes recipe planning, modules and links to the separate Alien Synth mechanics.
 - **[Alien Synth notes](systems/alien-synth.md)** document differences in inventory, recipes and speed.
 - **[Fixture mechanics](systems/fixtures.md)** document time-based upgrades.

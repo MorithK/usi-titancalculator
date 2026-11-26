@@ -26,7 +26,7 @@ Columns under *Highest unlocked* are the elements of `VeilController.highest_sec
 | Penumbra 152 | Penumbra | 154/153/152/150 | true | 2 | 6 | 3 |
 | Penumbra 153 | Penumbra | 154/153/153/150 | true | 3 | 6 | 3 |
 
-**Caution on chronology:** These files are different route-specific **snapshots**, not one strictly ascending global sequence. A higher Antumbra or Penumbra checkpoint may already have higher Surface progress. Do not derive progression order by alphabetically sorting filenames. The filenames include `2026_07_28`/`2026_07_29`, but their embedded save timestamps decode to **2026-11-26**, approximately **20:35–21:01 UTC**. Treat this discrepancy as provenance metadata; do not assume filename or embedded timestamp alone accurately measures the original date of first reaching a sector.
+**Caution on chronology:** These files are different route-specific **snapshots**, not one strictly ascending global sequence. A higher Antumbra or Penumbra checkpoint may already have higher Surface progress. Do not derive progression order by alphabetically sorting filenames. The filename dates (`2026_07_28`/`2026_07_29`) were **manually added by the player from the original automatic sector-unlock saves** to preserve the original order and dates of sector entry. The embedded timestamps (`2026-11-26`, approximately `20:35–21:01 UTC`) instead reflect the date of the **fresh manual export strings generated through the game's Settings tab** after loading those older saves. **These timestamps represent different events and do not conflict.** Use the filename's original date to reconstruct historical checkpoint ordering; use the embedded timestamp for manual-export provenance, not sector-entry chronology.
 
 ## 2. Confirmed unlock and state boundaries
 

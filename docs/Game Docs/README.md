@@ -10,6 +10,7 @@
 - **[Modifier map](modifier-map.md)** tracks sources, effects, operations, activation conditions, candidate save keys, and verification.
 - **[Warp system](systems/warp.md)** is the current implementation focus.
 - **[Titan-entry baseline](reference-saves/titan-entry.md)** records the earliest supported Titan-phase save and proposed regression tests.
+- **[Sector 151–155 checkpoints](reference-saves/sectors-151-155.md)** compare twelve Surface/Antumbra/Penumbra saves and reveal the Veil Shift transition boundary.
 - **[Synth system](systems/synth.md)** includes recipe planning, modules and links to the separate Alien Synth mechanics.
 - **[Alien Synth notes](systems/alien-synth.md)** document differences in inventory, recipes and speed.
 - **[Fixture mechanics](systems/fixtures.md)** document time-based upgrades.

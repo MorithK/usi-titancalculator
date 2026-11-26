@@ -22,3 +22,9 @@ Total Multiplicative Bonus: 48.66
 Stat Total: 48.66
 
 Missing: None
+
+---
+
+## Mapping notes (2026-11-26)
+
+According to the [wiki's tether mechanics](https://spaceidle.game-vault.net/wiki/Warp_Drive), the **Warp Discharge Speed** stat determines discharge duration; completion of a discharge grants Residuum. The observed **48.66** is a multiplier snapshot, not seconds remaining or the actual effective duration of any one Warp. Reconstruct individual discharge times using their **base durations** and the verified global bonus formula.

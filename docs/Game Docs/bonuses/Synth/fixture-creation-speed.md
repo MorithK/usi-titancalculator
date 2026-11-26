@@ -36,3 +36,11 @@ Stat Total: 3.04e33
 Missing: 
 Module: Fixture Fixer
 Spliced Materials Engineer: Fixture Discipline
+
+---
+
+## Mapping notes (2026-11-26)
+
+The [wiki's Fixtures section](https://spaceidle.game-vault.net/wiki/Fixtures) explicitly states that fixtures use a separate **Fixture Creation Speed** and are **not** accelerated by ordinary Synth Speed. Early fixture base creation time is **two hours**, doubling per purchased level; later tiers have distinct starting times and level caps. These are wiki rules for reference, not proof of the effective speed formula for current Titan-tier fixtures.
+
+Do not model fixture time as a Synth recipe cost. The snapshot's missing Fixture Fixer and Spliced Materials Engineer sources require investigation; no missing source should silently contribute ×1 by default.

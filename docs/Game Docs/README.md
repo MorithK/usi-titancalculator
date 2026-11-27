@@ -57,3 +57,5 @@ Where these disagree, **record the difference and game version** rather than sil
 6. Link the verified calculation and regression test.
 
 **Last reviewed:** 2026-11-26.
+
+- **[Historical clear submissions](reference-saves/clear-library-submission-instructions.md)** explains selecting the next-sector unlock save, disabling offline progress before loading, and verifying the clear.

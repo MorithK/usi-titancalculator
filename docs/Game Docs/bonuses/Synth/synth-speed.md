@@ -45,7 +45,8 @@ The following diagram identifies major contributing systems.
 
 ```mermaid
 flowchart TD
-    SYN["Synth / Alien Synth "] --> SS["Effective Synth Speed"]
+    SYN["Synth "] --> SS["Effective Synth Speed"]
+    SYN["Alien Synth "] --> SS
     MOD["Synth Modules"] --> SS
     FIX["Fixtures"] --> SS
     COM["Compute / Strata"] --> SS

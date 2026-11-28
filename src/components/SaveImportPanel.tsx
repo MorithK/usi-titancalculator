@@ -18,6 +18,7 @@ import { buildImportChanges, type ImportChange, } from "@/lib/saveImport/buildIm
 import SnapshotDiffPreview from "@/components/saveImport/SnapshotDiffPreview";
 import { usePlayerWorkspace } from "@/hooks/usePlayerWorkspace";
 import type { PlayerSnapshot, WorkspaceSource } from "@/types/playerWorkspace";
+import GuestPurchasePanel from "@/components/GuestPurchasePanel";
 
 /**
  * Displays the game-save decoder and import preview.
@@ -534,100 +535,111 @@ async function handleApplyImport() {
       </div>
     </div>
 
-    
-{/* Show a summary of the current guest workspace. */}
-{!onApplyResourceImport && workspace !== null && (
-  <section className="rounded-lg border p-4 space-y-2">
-    <h3 className="font-semibold">
-      Active Guest Workspace
-    </h3>
-    
-    {/* Region selected for the calculator simulation. */}
-    <div className="space-y-2">
-      <label
-        htmlFor="simulated-farming-region"
-        className="block text-sm font-medium"
-      >
-        Simulated Farming Region
-      </label>
+    {/* Show a summary of the current guest workspace. */}
+    {!onApplyResourceImport && workspace !== null && (
+      <section className="rounded-lg border p-4 space-y-2">
+        <h3 className="font-semibold">
+          Active Guest Workspace
+        </h3>
+        
+        {/* Region selected for the calculator simulation. */}
+        <div className="space-y-2">
+          <label
+            htmlFor="simulated-farming-region"
+            className="block text-sm font-medium"
+          >
+            Simulated Farming Region
+          </label>
 
-      <select
-        id="simulated-farming-region"
-        value={workspace.simulatedState.farmingRegionId}
-        onChange={event =>
-          handleFarmingRegionChange(
-            Number(event.target.value)
-          )
-        }
-        className="w-full rounded-lg border border-slate-700
-          bg-slate-900 px-3 py-2 text-white"
-      >
-        <option value={1}>Surface</option>
-        <option value={2}>Antumbra</option>
-        <option value={3}>Penumbra</option>
-        <option value={4}>Umbra</option>
-      </select>
-    </div>
+          <select
+            id="simulated-farming-region"
+            value={workspace.simulatedState.farmingRegionId}
+            onChange={event =>
+              handleFarmingRegionChange(
+                Number(event.target.value)
+              )
+            }
+            className="w-full rounded-lg border border-slate-700
+              bg-slate-900 px-3 py-2 text-white"
+          >
+            <option value={1}>Surface</option>
+            <option value={2}>Antumbra</option>
+            <option value={3}>Penumbra</option>
+            <option value={4}>Umbra</option>
+          </select>
+        </div>
 
-    {/* Compare the imported region with our simulation. */}
-    <div className="space-y-1 text-sm">
-      <p>
-        Imported region: {
-          workspace.importedBaseline.progression
-            .currentRegionName
-        }
-      </p>
+        {/* Compare the imported region with our simulation. */}
+        <div className="space-y-1 text-sm">
+          <p>
+            Imported region: {
+              workspace.importedBaseline.progression
+                .currentRegionName
+            }
+          </p>
 
-      <p>
-        Imported farming region ID: {
-          workspace.importedBaseline.farmingRegionId
-        }
-      </p>
+          <p>
+            Imported farming region ID: {
+              workspace.importedBaseline.farmingRegionId
+            }
+          </p>
 
-      <p>
-        Simulated farming region ID: {
-          workspace.simulatedState.farmingRegionId
-        }
-      </p>
-    </div>
+          <p>
+            Simulated farming region ID: {
+              workspace.simulatedState.farmingRegionId
+            }
+          </p>
+        </div>
 
-    {/* Reset all calculator simulations to the import. */}
-    <button
-      type="button"
-      onClick={handleResetSimulation}
-      disabled={!workspace.hasUnsavedChanges}
-      className="rounded-lg border border-slate-600
-        px-4 py-2 text-sm
-        disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      Reset Simulation
-    </button>
+        {/* Reset all calculator simulations to the import. */}
+        <button
+          type="button"
+          onClick={handleResetSimulation}
+          disabled={!workspace.hasUnsavedChanges}
+          className="rounded-lg border border-slate-600
+            px-4 py-2 text-sm
+            disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Reset Simulation
+        </button>
 
-    <p className="text-sm">
-      Region: {
-        workspace.simulatedState.progression.currentRegionName
-      }
-    </p>
+        <p className="text-sm">
+          Region: {
+            workspace.simulatedState.progression.currentRegionName
+          }
+        </p>
 
-    <p className="text-sm">
-      Current sector: {
-        workspace.simulatedState.progression.currentSector
-      }
-    </p>
+        <p className="text-sm">
+          Current sector: {
+            workspace.simulatedState.progression.currentSector
+          }
+        </p>
 
-    <p className="text-sm">
-      Loaded resources: {
-        workspace.simulatedState.resources.length
-      }
-    </p>
+        <p className="text-sm">
+          Loaded resources: {
+            workspace.simulatedState.resources.length
+          }
+        </p>
 
-    <p className="text-xs text-muted-foreground">
-      This workspace will be lost if you refresh or
-      close the page. Cloud saving is not enabled
-      in guest mode.
-    </p>
-  </section>
-)}
+        <p className="text-xs text-muted-foreground">
+          This workspace will be lost if you refresh or
+          close the page. Cloud saving is not enabled
+          in guest mode.
+        </p>
+      </section>
+    )}
+
+    {/*
+    * Guest purchase simulator.
+    *
+    * Only render after a game save has been loaded into
+    * PlayerWorkspace. Authenticated imports continue using
+    * the original Titan and Crew panels.
+    */}
+    {!onApplyResourceImport && workspace !== null && (
+      <GuestPurchasePanel />
+    )}
+
 
       {loading && <p>Decoding save file...</p>}
 

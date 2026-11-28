@@ -25,6 +25,32 @@ export interface WarpNodeDefinition {
   save_name: string;
   max_level: number;
 }
+
+/**
+ * Contains the game reference definitions required to
+ * interpret an imported save.
+ *
+ * These definitions describe game systems, not an
+ * individual player's progression.
+ *
+ * They can therefore be shared between guest and
+ * authenticated calculator sessions.
+ */
+export interface PublicImportDefinitions {
+
+  /** Supported Titan components and their save mappings. */
+  core: CoreDefinition[];
+
+  /** Crew, Compute and Reactor upgrade mappings. */
+  crew: CrewDefinition[];
+
+  /** Supported Warp definitions and game save keys. */
+  warps: WarpDefinition[];
+
+  /** Warp nodes and their maximum upgrade levels. */
+  nodes: WarpNodeDefinition[];
+}
+
 export interface ExistingImportState {
   components: Array<{ slot_number: number; core_upgrade_id: number; current_level: number }>;
   crew: Array<{ crew_upgrade_id: number; current_level: number }>;
@@ -111,3 +137,85 @@ export async function loadImportDefinitions(): Promise<ImportDefinitions> {
     }
   };
 }
+
+/**
+ * Loads game reference definitions without requesting
+ * an authenticated player or their private progression.
+ *
+ * These definitions are used to translate game save
+ * records into the calculator's internal identifiers.
+ *
+ * This function performs read-only Supabase queries.
+ * Guest access also requires the corresponding database
+ * tables or views to permit anonymous SELECT operations.
+ *
+ * No player data is read or modified.
+ */
+export async function loadPublicImportDefinitions():
+  Promise<PublicImportDefinitions> {
+
+  // Load the four sets of game reference definitions.
+  const results = await Promise.all([
+    supabase.from("core_upgrade_cost_reference").select(
+      "core_upgrade_id,core_upgrade_name,component_type,game_component_id,game_upgrade_prefix"
+    ),
+
+    supabase.from("crew_upgrade_cost_reference").select(
+      "crew_upgrade_id,crew_upgrade_name,game_save_key"
+    ),
+
+    supabase.from("warps").select(
+      "warp_id,warp_name,game_save_key,skein_resource_key"
+    ),
+
+    supabase.from("warp_nodes").select(
+      "warp_node_id,warp_id,node_name,save_name,max_level"
+    )
+  ]);
+
+  // Stop if any reference query failed.
+  for (const result of results) {
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+  }
+
+  // Give the result sets their corresponding TypeScript types.
+  const core = (results[0].data ?? []) as CoreDefinition[];
+  const crew = (results[1].data ?? []) as CrewDefinition[];
+  const warps = (results[2].data ?? []) as WarpDefinition[];
+  const nodes = (results[3].data ?? []) as WarpNodeDefinition[];
+
+  // Ensure the required definitions were retrieved.
+  if (
+    core.length === 0 ||
+    crew.length === 0 ||
+    nodes.length === 0
+  ) {
+    throw new Error(
+      "Game import reference definitions are missing."
+    );
+  }
+
+  // Check that all required import mappings are present.
+  if (
+    core.some(item =>
+      !item.game_component_id ||
+      !item.game_upgrade_prefix
+    ) ||
+    crew.some(item => !item.game_save_key)
+  ) {
+    throw new Error(
+      "Game import reference mappings are incomplete."
+    );
+  }
+
+  // Return definitions without any player-specific state.
+  return {
+    core,
+    crew,
+    warps,
+    nodes
+  };
+}
+

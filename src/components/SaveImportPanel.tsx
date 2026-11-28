@@ -227,31 +227,63 @@ export default function SaveImportPanel({
       setLoading(false);
     }
   }
-  
-  async function handleApplyImport() {
-    if (
-      !mapping ||
-      mapping.mapped.length === 0 ||
-      !progression ||
-      titanComponents.length !== 7 ||
-      !warps ||
-      crewUpgrades.length === 0 ||
-      changes.length === 0
-    ) {
-      return;
-    }
-    setImporting(true);
-    setError(null);
-    setImportMessage(null);
-  
-    try {
+    
+/**
+ * Applies the game-save data from the completed preview.
+ *
+ * Authenticated players retain the existing Supabase
+ * import operation.
+ *
+ * Guests instead create an in-memory PlayerSnapshot,
+ * allowing the calculator to operate without a login
+ * or a database write.
+ */
+async function handleApplyImport() {
+
+  /*
+   * Require a valid, fully decoded import preview.
+   *
+   * Account comparison records are only required
+   * when the authenticated cloud importer is used.
+   */
+  if (
+    !save ||
+    !mapping ||
+    mapping.mapped.length === 0 ||
+    !progression ||
+    titanComponents.length !== 7 ||
+    !warps ||
+    crewUpgrades.length === 0 ||
+    (onApplyResourceImport && changes.length === 0)
+  ) {
+    return;
+  }
+
+  // Prevent duplicate imports and clear old messages.
+  setImporting(true);
+  setError(null);
+  setImportMessage(null);
+
+  try {
+
+    if (onApplyResourceImport) {
+
+      /*
+       * AUTHENTICATED IMPORT
+       *
+       * Retain the existing Supabase import callback.
+       *
+       * TypeScript knows this callback is defined
+       * inside this conditional branch.
+       */
       const result = await onApplyResourceImport(
         mapping.mapped,
         progression,
         titanComponents,
         warps,
         crewUpgrades
-      );      
+      );
+
       setImportMessage(
         `Game save imported successfully. ` +
         `${result.resources_imported} resources, ` +
@@ -260,27 +292,104 @@ export default function SaveImportPanel({
         `${result.crew_upgrades_imported} Crew upgrades, ` +
         `${result.warps_imported} Warps and ` +
         `${result.warp_nodes_imported} Warp nodes updated.`
-      );      
-      setSave(null);
-      setMapping(null);
-      setExportString("");
-      setProgression(null);
-      setTitanComponents([]);
-      setWarps(null);
-      setCrewUpgrades([]);
-      setChanges([]);
-      setPlayerLastUpdated(null);
-
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Resource import failed."
       );
-    } finally {
-      setImporting(false);
+
+    } else {
+
+      /*
+       * GUEST IMPORT
+       *
+       * Create a snapshot using the extracted
+       * game-save data already held in React state.
+       *
+       * Account comparison values are intentionally
+       * excluded from workspace resources.
+       */
+      const snapshot: PlayerSnapshot = {
+
+        resources: mapping.mapped.map(resource => ({
+          resourceTypeId: resource.resourceTypeId,
+          gameResourceKey: resource.gameResourceKey,
+          resourceName: resource.resourceName,
+          resourceType: resource.resourceType,
+          amount: resource.amount,
+          perSecond: resource.perSecond,
+          rawPerSecond: resource.rawPerSecond
+        })),
+
+        progression,
+        titanComponents,
+        crewUpgrades,
+        warps
+      };
+
+      /*
+       * Record the origin of the imported snapshot.
+       *
+       * The imported timestamp comes from the game,
+       * while importedAt records when the calculator
+       * loaded the snapshot.
+       */
+      const source: WorkspaceSource = {
+        gameVersion: save.version,
+        compatibilityVersion: save.compatibilityVersion,
+        gameSaveTimestamp: save.timestamp,
+        importedAt: new Date().toISOString()
+      };
+
+      /*
+       * Load the snapshot into WorkspaceProvider.
+       *
+       * This creates independent importedBaseline
+       * and simulatedState copies.
+       *
+       * No Supabase write is performed.
+       */
+      loadSnapshot(snapshot, source);
+
+      setImportMessage(
+        `Game save loaded into your workspace. ` +
+        `${snapshot.resources.length} supported resources, ` +
+        `${snapshot.titanComponents.length} Titan components, ` +
+        `${snapshot.crewUpgrades.length} Crew upgrades and ` +
+        `${snapshot.warps.warps.length} Warps loaded.`
+      );
     }
+
+    /*
+     * Clear the temporary import preview.
+     *
+     * The guest workspace remains available through
+     * WorkspaceProvider after these fields are reset.
+     */
+    setSave(null);
+    setMapping(null);
+    setExportString("");
+    setProgression(null);
+    setTitanComponents([]);
+    setWarps(null);
+    setCrewUpgrades([]);
+    setChanges([]);
+    setPlayerLastUpdated(null);
+
+  } catch (err) {
+
+    // Display import errors without losing the preview.
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Game save import failed."
+    );
+
+    console.error("Game save import failed:", err);
+
+  } finally {
+
+    // Re-enable the import controls.
+    setImporting(false);
   }
+}
+
 
   const battleArea = save?.data.BattleArea;
   const playerInfo = save?.data.PlayerInfo;

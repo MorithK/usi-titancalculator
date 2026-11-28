@@ -68,33 +68,47 @@ export function resetSimulation(
 }
 
 /**
- * Updates the calculator's simulated player state.
+ * Applies an immutable update to the simulated state.
  *
- * The updater function receives the existing simulated
- * snapshot and returns a new snapshot containing changes.
+ * If the updater returns the current snapshot unchanged,
+ * the entire workspace is returned unchanged.
  *
- * The imported baseline is preserved so calculations
- * can always be reset to the original game state.
+ * This allows conditional updates to reject stale
+ * operations without falsely marking the workspace
+ * as modified.
  *
- * The updater must use immutable updates and must not
- * directly modify the existing snapshot.
+ * @param workspace Current calculator workspace.
+ * @param updater Function producing the next snapshot.
  *
- * This function operates entirely in memory.
- * It does not read or write data in Supabase.
+ * @returns Updated workspace, or the original on no-op.
  */
 export function updateSimulation(
   workspace: PlayerWorkspace,
   updater: (snapshot: PlayerSnapshot) => PlayerSnapshot
 ): PlayerWorkspace {
 
-  // Calculate the new simulated state using the supplied updater.
-  const simulatedState = updater(workspace.simulatedState);
+  const currentSnapshot = workspace.simulatedState;
 
-  // Return a new workspace with the updated simulation.
+  // Ask the caller to calculate the next simulated state.
+  const updatedSnapshot = updater(currentSnapshot);
+
+  /*
+   * Returning the exact same snapshot means that
+   * no operation was accepted.
+   *
+   * Preserve the entire workspace object and its
+   * existing hasUnsavedChanges value.
+   */
+  if (updatedSnapshot === currentSnapshot) {
+    return workspace;
+  }
+
+  // Accept the new simulated state without changing baseline.
   return {
     ...workspace,
-    simulatedState,
+    simulatedState: updatedSnapshot,
     hasUnsavedChanges: true
   };
 }
+
 

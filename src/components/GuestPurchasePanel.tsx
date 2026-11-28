@@ -34,6 +34,21 @@ interface GuestPurchasePreview {
 }
 
 /**
+ * A purchase submitted to the workspace.
+ *
+ * The target is the exact snapshot that should become
+ * active after React processes the simulation update.
+ *
+ * We only report success when the current simulated
+ * snapshot is this target object.
+ */
+interface PendingGuestPurchase {
+  source: PlayerSnapshot;
+  target: PlayerSnapshot;
+  levelsBought: number;
+}
+
+/**
  * Provides a temporary guest-only purchase interface.
  *
  * All prices come from public reference definitions.
@@ -58,7 +73,11 @@ export default function GuestPurchasePanel() {
   // The currently calculated purchase preview.
   const [purchasePreview, setPurchasePreview] =
     useState<GuestPurchasePreview | null>(null);
-
+    
+  // Tracks a submitted purchase until its result is visible.
+  const [pendingPurchase, setPendingPurchase] =
+    useState<PendingGuestPurchase | null>(null);
+    
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -118,7 +137,31 @@ export default function GuestPurchasePanel() {
     purchasePreview?.source === snapshot
       ? purchasePreview.result
       : null;
-
+      
+      /*
+       * Determine what happened to the submitted purchase.
+       *
+       * Accepted:
+       * The workspace now contains our calculated target.
+       *
+       * Pending:
+       * React still exposes the original source snapshot.
+       *
+       * Rejected:
+       * Some other snapshot became active instead.
+       *
+       * This is derived from actual workspace state, not
+       * from a promise that React has scheduled an update.
+       */
+      const purchaseStatus =
+        pendingPurchase === null
+          ? null
+          : snapshot === pendingPurchase.target
+            ? "accepted"
+            : snapshot === pendingPurchase.source
+              ? "pending"
+              : "rejected";
+      
   /**
    * Generate a purchase preview using real game costs.
    *
@@ -127,7 +170,8 @@ export default function GuestPurchasePanel() {
   function handlePreview() {
 
     if (!snapshot || !definitions) return;
-
+    // A new preview clears the previous purchase confirmation.
+    setPendingPurchase(null);
     setError(null);
     setMessage(null);
     setPurchasePreview(null);
@@ -163,66 +207,76 @@ export default function GuestPurchasePanel() {
     }
   }
 
+  
   /**
-   * Apply an affordable purchase to the in-memory
-   * calculator workspace.
+   * Requests a simulated Titan purchase.
    *
-   * This never calls the authenticated purchase RPC.
+   * The existing purchase calculator validates costs,
+   * balances, equipment IDs and upgrade levels.
+   *
+   * The workspace update is conditional: it is accepted
+   * only if the source snapshot is still current.
+   *
+   * Success is NOT reported here. The UI confirms
+   * acceptance after observing the resulting snapshot.
    */
   function handleApply() {
-
+  
     if (
       !workspace ||
       !activePreview ||
       !purchasePreview ||
-      activePreview.totalLevelsBought === 0
+      activePreview.totalLevelsBought === 0 ||
+      pendingPurchase !== null
     ) {
       return;
     }
-
+  
     setError(null);
     setMessage(null);
-
+  
     try {
-
-      /*
-       * Validate and calculate the updated snapshot
-       * before scheduling a React state update.
-       *
-       * Errors are caught here rather than inside
-       * React's state-update callback.
-       */
+  
+      // Calculate and validate the purchase result.
       const updatedSnapshot = applyWorkspacePurchase(
         workspace.simulatedState,
         "titan",
         activePreview
       );
-
+  
+      // Remember exactly which state was used.
       const sourceSnapshot = purchasePreview.source;
-
+  
       /*
-       * Apply the calculated snapshot through
-       * WorkspaceProvider.
+       * Record the intended result before asking React
+       * to update the shared workspace.
        *
-       * If another workspace update was queued first,
-       * avoid overwriting that newer snapshot.
+       * This lets the UI confirm the actual outcome.
+       */
+      setPendingPurchase({
+        source: sourceSnapshot,
+        target: updatedSnapshot,
+        levelsBought: activePreview.totalLevelsBought
+      });
+  
+      /*
+       * Apply only if the active snapshot still matches
+       * the snapshot used to calculate this preview.
+       *
+       * If not, return the current snapshot unchanged.
+       * updateSimulation() now treats that as a no-op.
        */
       applySimulation(current =>
         current === sourceSnapshot
           ? updatedSnapshot
           : current
       );
-
-      // Discard the preview after applying it.
+  
+      // The submitted preview can no longer be reused.
       setPurchasePreview(null);
-
-      setMessage(
-        `${activePreview.totalLevelsBought} Titan level ` +
-        `simulated. No database changes were made.`
-      );
-
+  
     } catch (err) {
-
+  
       setError(
         err instanceof Error
           ? err.message
@@ -230,7 +284,7 @@ export default function GuestPurchasePanel() {
       );
     }
   }
-
+  
   if (!snapshot) return null;
 
   if (loading) {
@@ -296,6 +350,8 @@ export default function GuestPurchasePanel() {
           id="guest-titan-slot"
           value={selectedSlot}
           onChange={event => {
+            // A new preview clears the previous purchase confirmation.
+            setPendingPurchase(null);        
             setSelectedSlot(Number(event.target.value));
             setPurchasePreview(null);
             setError(null);
@@ -404,13 +460,37 @@ export default function GuestPurchasePanel() {
           </div>
 
           <Button
-            disabled={activePreview.totalLevelsBought === 0}
+            disabled={
+                activePreview.totalLevelsBought === 0 ||
+                pendingPurchase !== null
+              }
             onClick={handleApply}
           >
             Apply Simulated Purchase
           </Button>
         </div>
       )}
+
+    {/* Confirm simulated purchases from observed workspace state. */}
+    {pendingPurchase && purchaseStatus === "pending" && (
+    <p role="status" className="text-sm text-slate-400">
+        Applying simulated purchase...
+    </p>
+    )}
+
+    {pendingPurchase && purchaseStatus === "accepted" && (
+    <p role="status" className="text-sm text-green-400">
+        {pendingPurchase.levelsBought} Titan level(s)
+        simulated successfully. No database changes made.
+    </p>
+    )}
+
+    {pendingPurchase && purchaseStatus === "rejected" && (
+    <p role="alert" className="text-sm text-amber-400">
+        The workspace changed before the purchase was
+        applied. Generate a new purchase preview.
+    </p>
+    )}
 
       {message && (
         <p role="status" className="text-sm text-green-400">

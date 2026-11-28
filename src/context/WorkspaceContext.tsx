@@ -1,7 +1,5 @@
 
 import {
-  createContext,
-  useContext,
   useState,
   type ReactNode
 } from "react";
@@ -18,68 +16,10 @@ import {
   updateSimulation
 } from "../lib/workspace/playerWorkspace";
 
-/**
- * Describes the data and actions available to components
- * that use the shared calculator workspace.
- *
- * Components access these through usePlayerWorkspace()
- * rather than receiving them as individual props.
- */
-interface WorkspaceContextValue {
-
-  /**
-   * Current calculator workspace.
-   *
-   * Null means the player has not loaded a workspace.
-   * A workspace can exist without a signed-in user.
-   */
-  workspace: PlayerWorkspace | null;
-
-  /**
-   * Creates a new workspace from an imported game snapshot.
-   *
-   * Replaces any existing workspace, including simulations.
-   * Does not write imported data to Supabase.
-   */
-  loadSnapshot: (
-    snapshot: PlayerSnapshot,
-    source: WorkspaceSource
-  ) => void;
-
-  /**
-   * Updates the simulated snapshot using a callback.
-   *
-   * The imported baseline remains unchanged.
-   */
-  applySimulation: (
-    updater: (snapshot: PlayerSnapshot) => PlayerSnapshot
-  ) => void;
-
-  /**
-   * Restores the simulated state from the imported baseline.
-   */
-  reset: () => void;
-
-  /**
-   * Clears the current workspace from React memory.
-   *
-   * Does not delete any cloud-saved player progression.
-   */
-  clear: () => void;
-}
-
-/**
- * Creates the shared React Context.
- *
- * Undefined is used as the default because accessing
- * the context outside its provider is a programming error.
- *
- * This is different from workspace === null, which is
- * a valid state meaning no game save has been loaded.
- */
-const WorkspaceContext = createContext<
-  WorkspaceContextValue | undefined
->(undefined);
+import {
+    WorkspaceContext,
+    type WorkspaceContextValue
+  } from "./workspaceContextValue";
 
 /**
  * Provides shared workspace state to child components.
@@ -181,29 +121,4 @@ export function WorkspaceProvider({
       {children}
     </WorkspaceContext.Provider>
   );
-}
-
-/**
- * Custom React hook for accessing the shared workspace.
- *
- * Any component rendered inside WorkspaceProvider may
- * call this hook to access workspace data and actions.
- *
- * Throws an error when the provider is missing, making
- * incorrect component placement easier to diagnose.
- */
-export function usePlayerWorkspace(): WorkspaceContextValue {
-
-  // Retrieve the nearest WorkspaceContext provider.
-  const context = useContext(WorkspaceContext);
-
-  // Fail clearly if a component is outside the provider.
-  if (context === undefined) {
-    throw new Error(
-      "usePlayerWorkspace must be used inside WorkspaceProvider."
-    );
-  }
-
-  // Return the shared workspace and its available actions.
-  return context;
 }

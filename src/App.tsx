@@ -12,7 +12,6 @@ import { importPlayerSnapshot, type ApplyResourceImport } from "@/lib/saveImport
 import SaveImportPanel from "@/components/SaveImportPanel";
 import PlayerOverview from "./components/PlayerOverview";
 import WarpPanel from "./components/WarpPanel";
-import { loadPublicImportDefinitions } from  "@/lib/saveImport/importDefinitions";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -30,44 +29,6 @@ export default function App() {
   
   const writeLock = useRef(false)
   const [writing, setWriting] = useState(false)
-
-  
-  /**
-   * TEMPORARY ARCH-2 TEST
-   *
-   * Verifies that game reference definitions can be loaded
-   * without an authenticated Supabase user.
-   *
-   * Remove this effect after completing the test.
-   */
-  useEffect(() => {
-    /**
-     * Executes the public reference-data loader and reports
-     * the number of definitions returned by each query.
-     */
-    async function testPublicDefinitions() {
-      try {
-        const definitions =
-          await loadPublicImportDefinitions();
-  
-        console.log("ARCH-2 Public Definitions Test:", {
-          core: definitions.core.length,
-          crew: definitions.crew.length,
-          warps: definitions.warps.length,
-          nodes: definitions.nodes.length
-        });
-  
-      } catch (error) {
-        console.error(
-          "ARCH-2 Public Definitions Test Failed:",
-          error
-        );
-      }
-    }
-  
-    void testPublicDefinitions();
-  }, []);
-  
 
   const writeGuard: WriteGuard = {
     begin: () => {

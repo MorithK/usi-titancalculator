@@ -35,8 +35,12 @@ export default function SaveImportPanel({
 }) {
 
   // Access the shared in-memory player workspace.
-  const { workspace, loadSnapshot } = usePlayerWorkspace();
-
+  const {
+    workspace,
+    loadSnapshot,
+    applySimulation,
+    reset
+  } = usePlayerWorkspace();
   // Continue with your existing useState declarations.
   const [save, setSave] = useState<USIDecodedSave | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +55,60 @@ export default function SaveImportPanel({
   const [crewUpgrades, setCrewUpgrades] = useState<ImportedCrewUpgrade[]>([]);
   const [changes, setChanges] = useState<ImportChange[]>([]);
   const [playerLastUpdated, setPlayerLastUpdated] = useState<string | null>(null);
-
+  
+  /**
+   * Changes the calculator's simulated farming region.
+   *
+   * This affects only simulatedState.
+   *
+   * The imported baseline, current game sector and
+   * progression history remain unchanged.
+   *
+   * @param regionId Region selected by the player.
+   */
+  function handleFarmingRegionChange(regionId: number) {
+  
+    // Reject unknown region IDs.
+    if (
+      !Number.isInteger(regionId) ||
+      regionId < 1 ||
+      regionId > 4
+    ) {
+      return;
+    }
+  
+    // Avoid an unnecessary update for the active region.
+    if (
+      workspace?.simulatedState.farmingRegionId === regionId
+    ) {
+      return;
+    }
+  
+    /*
+     * Apply an immutable update to simulatedState.
+     *
+     * The snapshot's other properties retain their
+     * existing values.
+     */
+    applySimulation(snapshot => ({
+      ...snapshot,
+      farmingRegionId: regionId
+    }));
+  }
+  
+  /**
+   * Restores the simulated calculator to the exact
+   * imported game snapshot.
+   *
+   * This resets all simulated changes, not only
+   * the farming region.
+   *
+   * Does not modify Supabase or the imported baseline.
+   */
+  function handleResetSimulation() {
+    reset();
+  }
+  
   
   /**
    * Decodes and validates a pasted game save.
@@ -306,7 +363,8 @@ async function handleApplyImport() {
        * excluded from workspace resources.
        */
       const snapshot: PlayerSnapshot = {
-
+        // Begin simulations in the region recorded by the save.
+        farmingRegionId: progression.currentRegionId,
         resources: mapping.mapped.map(resource => ({
           resourceTypeId: resource.resourceTypeId,
           gameResourceKey: resource.gameResourceKey,
@@ -483,6 +541,67 @@ async function handleApplyImport() {
     <h3 className="font-semibold">
       Active Guest Workspace
     </h3>
+    
+    {/* Region selected for the calculator simulation. */}
+    <div className="space-y-2">
+      <label
+        htmlFor="simulated-farming-region"
+        className="block text-sm font-medium"
+      >
+        Simulated Farming Region
+      </label>
+
+      <select
+        id="simulated-farming-region"
+        value={workspace.simulatedState.farmingRegionId}
+        onChange={event =>
+          handleFarmingRegionChange(
+            Number(event.target.value)
+          )
+        }
+        className="w-full rounded-lg border border-slate-700
+          bg-slate-900 px-3 py-2 text-white"
+      >
+        <option value={1}>Surface</option>
+        <option value={2}>Antumbra</option>
+        <option value={3}>Penumbra</option>
+        <option value={4}>Umbra</option>
+      </select>
+    </div>
+
+    {/* Compare the imported region with our simulation. */}
+    <div className="space-y-1 text-sm">
+      <p>
+        Imported region: {
+          workspace.importedBaseline.progression
+            .currentRegionName
+        }
+      </p>
+
+      <p>
+        Imported farming region ID: {
+          workspace.importedBaseline.farmingRegionId
+        }
+      </p>
+
+      <p>
+        Simulated farming region ID: {
+          workspace.simulatedState.farmingRegionId
+        }
+      </p>
+    </div>
+
+    {/* Reset all calculator simulations to the import. */}
+    <button
+      type="button"
+      onClick={handleResetSimulation}
+      disabled={!workspace.hasUnsavedChanges}
+      className="rounded-lg border border-slate-600
+        px-4 py-2 text-sm
+        disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      Reset Simulation
+    </button>
 
     <p className="text-sm">
       Region: {

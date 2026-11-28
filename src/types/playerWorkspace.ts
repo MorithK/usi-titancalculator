@@ -76,7 +76,25 @@ export interface PlayerSnapshot {
 
   /** Resource balances and production rates. */
   resources: WorkspaceResource[];
-
+  
+  /**
+   * Region selected for calculator simulations.
+   *
+   * This is independent of progression.currentRegionId,
+   * which records the region occupied when the game
+   * save was exported.
+   *
+   * Defaults to the imported region and can be changed
+   * without modifying the original progression history.
+   *
+   * Valid values:
+   * 1 = Surface
+   * 2 = Antumbra
+   * 3 = Penumbra
+   * 4 = Umbra
+   */
+  farmingRegionId: number;
+  
   /**
    * Current sector, region and progression history.
    *

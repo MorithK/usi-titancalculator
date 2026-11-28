@@ -194,20 +194,43 @@ export default function App() {
   }
 
   if (loading) return <p>Loading...</p>
-
+  
+  /*
+   * Guest entry point.
+   *
+   * Guests can decode, preview and load game saves
+   * without an authenticated Supabase account.
+   *
+   * The login form remains available for players
+   * who want to access their cloud-saved data.
+   */
   if (!user) {
     return (
-      <Login
-        email={email}
-        password={password}
-        error={error}
-        onEmailChange={setEmail}
-        onPasswordChange={setPassword}
-        onLogin={handleLogin}
-      />
-    )
+      <main className="min-h-screen bg-[#0B1120] p-6">
+        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-2">
+  
+          {/* Guest game-save import panel. */}
+          <section className="min-w-0">
+            <SaveImportPanel />
+          </section>
+  
+          {/* Existing authenticated login form. */}
+          <section className="min-w-0">
+            <Login
+              email={email}
+              password={password}
+              error={error}
+              onEmailChange={setEmail}
+              onPasswordChange={setPassword}
+              onLogin={handleLogin}
+            />
+          </section>
+  
+        </div>
+      </main>
+    );
   }
- 
+   
   return (
     <AppShell
       key={user.id}
